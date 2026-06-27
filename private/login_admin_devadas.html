@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Admin Login</h2>
+
+<input type="password" id="pwd">
+
+<button onclick="login()">
+Login
+</button>
+
+<script>
+
+async function login() {
+
+    const response = await fetch('/admin-login', {
+
+        method: 'POST',
+
+        headers: {
+            'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+            password: document.getElementById('pwd').value
+        })
+
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+
+        window.location = '/downloadorders';
+
+    }
+    else {
+
+        alert('Wrong Password');
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

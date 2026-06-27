@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Product Order</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    margin:0;
+    padding:0;
+}
+
+.product{
+    border:1px solid #ccc;
+    padding:10px;
+    margin-bottom:5px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.productRight{
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+
+.productQty{
+    width:60px;
+    padding:5px;
+    text-align:center;
+}
+
+/* Fixed Header */
+
+.header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    background:white;
+    padding:10px;
+    border-bottom:1px solid #ccc;
+    z-index:1000;
+}
+
+.header input{
+    width:100%;
+    padding:10px;
+    box-sizing:border-box;
+    margin-bottom:10px;
+}
+
+.header button{
+    padding:10px;
+}
+
+/* Message */
+
+#msg{
+    margin-top:5px;
+    color:green;
+    font-weight:bold;
+    min-height:20px;
+}
+
+/* Product Area */
+
+.content{
+    margin-top:170px;
+    padding:10px;
+}
+
+.product{
+    border:1px solid #ccc;
+    padding:10px;
+    margin-bottom:5px;
+}
+
+.product button{
+    float:right;
+}
+.productQty{
+    width:60px;
+    padding:5px;
+    margin-left:10px;
+    margin-right:10px;
+}
+
+.cartQty{
+    width:80px;
+    padding:5px;
+}
+/* Cart Panel */
+
+.cartPopup{
+    position:fixed;
+    top:0;
+    right:-350px;
+    width:320px;
+    height:100%;
+    background:white;
+    border-left:1px solid #ccc;
+    overflow:auto;
+    transition:0.3s;
+    z-index:2000;
+    padding:10px;
+}
+
+.cartPopup.show{
+    right:0;
+}
+
+.cartItem{
+    border:1px solid #ccc;
+    padding:10px;
+    margin-bottom:5px;
+}
+
+.cartItem button{
+    width:35px;
+    height:35px;
+}
+
+.closeBtn{
+    float:right;
+}
+
+.placeBtn{
+    width:100%;
+    padding:12px;
+    background:green;
+    color:white;
+    border:none;
+    font-size:16px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<div class="header">
+
+    <h3 id="customerName"></h3>
+
+    <input
+    type="text"
+    id="search"
+    placeholder="Search Product"
+    onkeyup="filterProducts()">
+
+    <button onclick="openCart()">
+    View Cart
+    (Items:
+    <span id="cartCount">0</span>,
+    Qty:
+    <span id="totalQty">0</span>)
+    </button>
+
+    <div id="msg"></div>
+
+</div>
+
+<!-- PRODUCTS -->
+
+<div class="content">
+
+    <h3>Products</h3>
+
+    <div id="productList"></div>
+
+</div>
+
+<!-- CART -->
+
+<div id="cartPopup" class="cartPopup">
+
+    <div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;">
+
+    <h3 style="margin:0;">Cart</h3>
+
+    <button
+    onclick="closeCart()"
+    style="
+    background:red;
+    color:white;
+    border:none;
+    padding:5px 10px;
+    border-radius:4px;">
+    ✖
+    </button>
+
+</div>
+
+
+
+<div style="
+background:#e7f3ff;
+padding:8px;
+margin-bottom:10px;
+font-size:13px;
+border:1px solid #b6d4fe;
+border-radius:4px;">
+To add more products, click Continue Shopping.<br>
+To remove a product, enter Qty = 0.
+</div>
+    <div id="cartList"></div>
+
+    <br>
+    <button
+    onclick="closeCart()"
+    style="
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    background:#007bff;
+    color:white;
+    border:none;
+    border-radius:4px;">
+    ← Continue Shopping
+    </button>
+    <button
+    class="placeBtn"
+    onclick="saveOrder()">
+    PLACE ORDER
+    </button>
+
+</div>
+
+<script>
+
+let products = [];
+let cart = [];
+
+/* Customer */
+
+const customer =
+JSON.parse(
+localStorage.getItem("customer")
+);
+
+if(customer){
+
+    document.getElementById(
+    "customerName"
+    ).innerHTML =
+    "Welcome " + customer.name;
+
+}
+
+/* Message */
+
+function showMessage(text){
+
+    document.getElementById(
+    "msg"
+    ).innerHTML = text;
+
+    setTimeout(function(){
+
+        document.getElementById(
+        "msg"
+        ).innerHTML = "";
+
+    },2000);
+
+}
+
+/* Load Products */
+
+async function loadProducts(){
+
+    const response =
+    await fetch('/products');
+
+    products =
+    await response.json();
+
+    showProducts(products);
+
+}
+
+/* Show Products */
+
+function showProducts(list){
+
+    let html='';
+
+    list.forEach(p=>{
+
+        html += `
+    <div class="product">
+
+        <button
+        onclick="addToCart(
+            '${p.prod_id}',
+            '${p.name}',
+            '${p.name_tam || ""}')">
+            Add
+        </button>
+
+        <div style="margin-left:10px;flex:1;">
+            <b>${p.name_tam || p.name}</b><br>
+            <small>${p.name}</small>
+        </div>
+
+    </div>
+    `;
+
+    });
+
+    document.getElementById(
+    "productList"
+    ).innerHTML = html;
+
+}
+
+/* Search */
+
+function filterProducts(){
+
+    const txt =
+    document.getElementById(
+    "search"
+    ).value
+    .toLowerCase();
+
+    const filtered =
+    products.filter(p=>
+
+        p.name
+        .toLowerCase()
+        .includes(txt)
+
+    );
+
+    showProducts(filtered);
+
+}
+
+/* Add Product */
+
+function addToCart(id,name,name_tam){
+
+    const item =
+    cart.find(x =>
+    x.prod_id == id);
+
+    if(item){
+
+        showMessage(
+        name_tam + " already added in cart"
+        );
+
+        return;
+    }
+
+    let qty = prompt(
+    "Enter Quantity for " + name_tam,
+    "1"
+    );
+
+    if(qty === null) return;
+
+    qty = Number(qty);
+
+    if(isNaN(qty) || qty <= 0){
+
+        alert(
+        "Please enter valid quantity"
+        );
+
+        return;
+    }
+
+    cart.push({
+
+        prod_id:id,
+        name:name,
+        name_tam:name_tam,        
+        qty:qty
+
+    });
+
+    refreshCart();
+
+    showMessage(
+    name_tam + " added to cart"
+    );
+
+}
+
+/* Refresh Cart */
+
+function refreshCart(){
+
+    let html='';
+
+    let totalQty = 0;
+
+    cart.forEach(item=>{
+
+        totalQty += item.qty;
+
+        html += `
+        <div class="cartItem">
+
+            <b>${item.name_tam}</b>
+            <br><br>
+
+            Qty :
+
+            <input
+            type="number"
+            min="0"
+            value="${item.qty}"
+            class="cartQty"
+            onchange="
+            changeQty(
+            '${item.prod_id}',
+            this.value
+            )">
+
+        </div>
+        `;
+
+    });
+
+    document.getElementById(
+    "cartList"
+    ).innerHTML = html;
+
+    document.getElementById(
+    "cartCount"
+    ).innerHTML = cart.length;
+
+    document.getElementById(
+    "totalQty"
+    ).innerHTML = totalQty;
+}
+
+function changeQty(id,qty){
+
+    qty = Number(qty);
+
+    const item =
+    cart.find(x =>
+    x.prod_id == id);
+
+    if(!item) return;
+
+    if(qty <= 0){
+
+        cart =
+        cart.filter(x =>
+        x.prod_id != id);
+
+        showMessage(
+        "Item removed from cart"
+        );
+
+    }
+    else{
+
+        item.qty = qty;
+
+    }
+
+    refreshCart();
+
+}
+
+/* Open Cart */
+
+function openCart(){
+
+    document
+    .getElementById(
+    "cartPopup"
+    )
+    .classList
+    .add("show");
+
+}
+
+/* Close Cart */
+
+function closeCart(){
+
+    document
+    .getElementById(
+    "cartPopup"
+    )
+    .classList
+    .remove("show");
+
+}
+
+/* Save Order */
+
+async function saveOrder(){
+
+    if(cart.length==0){
+
+        alert(
+        "Please Select Product"
+        );
+
+        return;
+
+    }
+
+   const order = {
+
+    order_id:
+    pendingOrderId,
+
+    customer_id:
+    customer.cus_id,
+
+    customer_name:
+    customer.name,
+
+    items:
+    cart
+
+};
+
+    const response =
+    await fetch('/saveorder',{
+
+        method:'POST',
+
+        headers:{
+            'Content-Type':
+            'application/json'
+        },
+
+        body:
+        JSON.stringify(order)
+
+    });
+
+    const result =
+    await response.json();
+
+  if(result.success){
+
+    alert(
+    result.message
+    );
+
+    closeCart();
+
+    if(result.order_id){
+
+        pendingOrderId =
+        result.order_id;
+    }
+
+}
+else{
+
+    alert(
+    result.message
+    );
+
+    pendingOrderId = null;
+
+    cart = [];
+
+    refreshCart();
+
+    closeCart();
+
+}
+
+}
+
+let pendingOrderId = null;
+async function loadPendingOrder(){
+
+    const response =
+    await fetch('/pendingorder/' + customer.cus_id);
+
+    const order =
+    await response.json();
+
+if(order){
+
+    pendingOrderId =
+    order._id;
+
+    cart =
+    order.items || [];
+
+    refreshCart();
+
+    showMessage(
+    "Pending order loaded"
+    );
+
+}
+
+}
+
+
+
+
+
+loadProducts();
+loadPendingOrder();
+
+</script>
+
+</body>
+</html>

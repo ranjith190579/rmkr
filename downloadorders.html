@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Order Download</title>
+</head>
+<body>
+
+<h2>Order Download Center</h2>
+
+<h3>
+Pending Orders :
+<span id="pendingCount">0</span>
+</h3>
+
+<button id="btnDownload">
+Download Orders
+</button>
+
+<br><br>
+
+<div id="result"></div>
+
+<script>
+
+loadPendingCount();
+
+async function loadPendingCount() {
+
+    const response =
+        await fetch('/pending-order-count');
+
+    const data =
+        await response.json();
+
+    document.getElementById('pendingCount').innerText =
+        data.count;
+}
+
+document.getElementById('btnDownload').onclick =
+async function () {
+
+    const btn = this;
+
+    btn.disabled = true;
+    btn.innerText = 'Downloading...';
+
+    try {
+
+        const response =
+            await fetch('/download-orders');
+
+        const data =
+            await response.json();
+
+        document.getElementById('result').innerHTML =
+            data.count + ' Orders Downloaded Successfully';
+
+        loadPendingCount();
+
+    }
+    catch {
+
+        document.getElementById('result').innerHTML =
+            'Download Failed';
+
+    }
+
+    btn.disabled = false;
+    btn.innerText = 'Download Orders';
+};
+
+</script>
+
+</body>
+</html>

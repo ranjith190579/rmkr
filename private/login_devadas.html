@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Customer Login</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    max-width:400px;
+    margin:auto;
+    padding:20px;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+.mobile-box{
+    margin-bottom:15px;
+}
+
+.dob-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.dob-row input{
+    text-align:center;
+}
+
+.separator{
+    font-size:24px;
+    font-weight:bold;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.help{
+    font-size:13px;
+    color:#666;
+    margin-bottom:8px;
+}
+
+</style>
+</head>
+<body>
+
+<h2>Customer Login</h2>
+
+<div class="mobile-box">
+
+    <input
+    type="tel"
+    id="phone"
+    name="phone"
+    list="mobileHistory"
+    placeholder="Mobile Number"
+    maxlength="10"
+    autocomplete="tel">
+
+    <datalist id="mobileHistory"></datalist>
+
+</div>
+
+<div class="help">
+Birth Date / Month
+</div>
+
+<div class="dob-row">
+
+    <input
+    type="tel"
+    id="birthDate"
+    placeholder="DD"
+    maxlength="2"
+    inputmode="numeric">
+
+    <div class="separator">/</div>
+
+    <input
+    type="tel"
+    id="birthMonth"
+    placeholder="MM"
+    maxlength="2"
+    inputmode="numeric">
+
+</div>
+
+<button
+id="loginBtn"
+onclick="login()">
+Login
+</button>
+
+<script>
+
+// Load saved mobile numbers
+window.onload = function(){
+
+    loadMobileHistory();
+
+    document
+    .getElementById("phone")
+    .focus();
+
+};
+
+function loadMobileHistory(){
+
+    const numbers =
+    JSON.parse(
+        localStorage.getItem("mobileHistory") || "[]"
+    );
+
+    const list =
+    document.getElementById("mobileHistory");
+
+    list.innerHTML = "";
+
+    numbers.forEach(num => {
+
+        const option =
+        document.createElement("option");
+
+        option.value = num;
+
+        list.appendChild(option);
+
+    });
+
+}
+
+// Mobile number
+document.getElementById("phone")
+.addEventListener("input", function(){
+
+    this.value =
+    this.value.replace(/\D/g,'');
+
+    if(this.value.length > 10){
+
+        this.value =
+        this.value.substring(0,10);
+
+    }
+
+    if(this.value.length === 10){
+
+        document
+        .getElementById("birthDate")
+        .focus();
+
+    }
+
+});
+
+// Birth Date
+document.getElementById("birthDate")
+.addEventListener("input", function(){
+
+    this.value =
+    this.value.replace(/\D/g,'');
+
+    if(this.value.length > 2){
+
+        this.value =
+        this.value.substring(0,2);
+
+    }
+
+    const val = this.value;
+
+    // Single digit 4-9
+    if(
+        val.length === 1 &&
+        Number(val) >= 4
+    ){
+
+        document
+        .getElementById("birthMonth")
+        .focus();
+
+    }
+
+    // Two digits entered
+    if(val.length === 2){
+
+        document
+        .getElementById("birthMonth")
+        .focus();
+
+    }
+
+});
+
+// Birth Month
+document.getElementById("birthMonth")
+.addEventListener("input", function(){
+
+    this.value =
+    this.value.replace(/\D/g,'');
+
+    if(this.value.length > 2){
+
+        this.value =
+        this.value.substring(0,2);
+
+    }
+
+    const val = this.value;
+
+    // First digit 2-9 => move immediately
+    if(
+        val.length === 1 &&
+        Number(val) >= 2
+    ){
+
+        document
+        .getElementById("loginBtn")
+        .focus();
+
+    }
+
+    // Two digits entered => move
+    if(val.length === 2){
+
+        document
+        .getElementById("loginBtn")
+        .focus();
+
+    }
+
+});
+
+// Enter key
+document.addEventListener("keydown", function(e){
+
+    if(e.key === "Enter"){
+
+        login();
+
+    }
+
+});
+
+async function login(){
+
+    const phone =
+    document.getElementById("phone").value.trim();
+
+    const birthDate =
+    document.getElementById("birthDate").value.trim();
+
+    const birthMonth =
+    document.getElementById("birthMonth").value.trim();
+
+    // Mobile Validation
+
+    if(!/^\d{10}$/.test(phone)){
+
+        alert(
+            "Please enter a valid 10 digit mobile number"
+        );
+
+        document
+        .getElementById("phone")
+        .focus();
+        const phoneBox =
+        document.getElementById("phone");
+
+        phoneBox.focus();
+        phoneBox.select();
+        return;
+
+    }
+
+    // Date Validation
+
+    if(
+        birthDate === "" ||
+        Number(birthDate) < 1 ||
+        Number(birthDate) > 31
+    ){
+
+        alert(
+            "Please enter a valid birth date"
+        );
+
+        document
+        .getElementById("birthDate")
+        .focus();
+        const birthDateBox =
+        document.getElementById("birthDate");
+
+        birthDateBox.focus();
+        birthDateBox.select();
+        return;
+
+    }
+
+    // Month Validation
+
+    if(
+        birthMonth === "" ||
+        Number(birthMonth) < 1 ||
+        Number(birthMonth) > 12
+    ){
+
+        alert(
+            "Please enter a valid birth month"
+        );
+
+        document
+        .getElementById("birthMonth")
+        .focus();
+        const birthMonthBox =
+        document.getElementById("birthMonth");
+
+        birthMonthBox.focus();
+        birthMonthBox.select();
+        return;
+
+    }
+
+    try{
+
+        const response =
+        await fetch('/login',{
+
+            method:'POST',
+
+            headers:{
+                'Content-Type':'application/json'
+            },
+
+            body:JSON.stringify({
+
+                phone:phone,
+                birthDate:Number(birthDate),
+                birthMonth:Number(birthMonth)
+
+            })
+
+        });
+
+        const data =
+        await response.json();
+
+        if(data.success){
+
+            // Save mobile number history
+
+            let numbers =
+            JSON.parse(
+                localStorage.getItem(
+                    "mobileHistory"
+                ) || "[]"
+            );
+
+            if(!numbers.includes(phone)){
+
+                numbers.push(phone);
+
+                localStorage.setItem(
+                    "mobileHistory",
+                    JSON.stringify(numbers)
+                );
+
+            }
+
+            localStorage.setItem(
+                "customer",
+                JSON.stringify(data.customer)
+            );
+
+            location.href = "/order";
+
+        }
+        else{
+
+            alert(
+                "Invalid Mobile Number or Birth Details"
+            );
+
+            document
+            .getElementById("phone")
+            .focus();
+
+            document
+            .getElementById("phone")
+            .select();
+
+        }
+
+    }
+    catch(err){
+
+        console.error(err);
+
+        alert(
+            "Server Error. Please try again."
+        );
+
+        document
+        .getElementById("phone")
+        .focus();
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
