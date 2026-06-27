@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Merchant Transaction Details</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:10px;
+    font-family:Arial,sans-serif;
+    background:#f3f3f3;
+}
+
+.header{
+    background:#1976d2;
+    color:white;
+    text-align:center;
+    padding:15px;
+    font-size:22px;
+    font-weight:bold;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+.customerName{
+    text-align:center;
+    font-size:16px;
+    font-weight:bold;
+    margin-bottom:15px;
+    color:#444;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    margin-bottom:35px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,.18);
+    border:2px solid #e0e0e0;
+}
+.netRow{
+    background:#fff8e1;
+    font-weight:bold;
+}
+.daySeparator{
+    height:4px;
+    background:#1976d2;
+    margin:25px 20px;
+    border-radius:10px;
+}
+.dateHeader{
+    background:#1565c0;
+    color:white;
+    text-align:center;
+    padding:15px;
+    font-size:20px;
+    font-weight:bold;
+    letter-spacing:1px;
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+}
+.reportDate{
+    background:#0d47a1;
+    color:white;
+    padding:15px;
+    text-align:left;
+    font-size:22px;
+    font-weight:bold;
+    border-radius:10px;
+    margin-top:35px;
+    margin-bottom:12px;
+    padding-left:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+}
+.amountLabel{
+    font-weight:bold;
+    color:#444;
+}
+
+.amountValue{
+    font-weight:bold;
+    font-size:16px;
+}
+.amountRow{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 15px;
+    border-bottom:1px solid #eee;
+    font-size:15px;
+}
+
+.netRow{
+    background:#fafafa;
+    font-weight:bold;
+}
+
+.purchaseRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:15px;
+}
+
+.itemDetails{
+    flex:1;
+    line-height:1.8;
+    white-space:pre-wrap;
+    color:#333;
+}
+
+.purchaseAmt{
+    font-size:18px;
+    font-weight:bold;
+    margin-left:15px;
+    color:#d84315;
+}
+
+.closingRow{
+    background:#e8f5e9;
+    color:#1b5e20;
+    padding:15px 15px 15px 20px;
+    font-size:18px;
+    font-weight:bold;
+    text-align:left;
+}
+
+.loading{
+    text-align:center;
+    font-size:18px;
+    margin-top:30px;
+}
+
+.noData{
+    text-align:center;
+    font-size:18px;
+    margin-top:30px;
+    color:red;
+}
+.ledgerLine{
+    padding:10px 15px;
+    font-size:16px;
+    font-weight:bold;
+    border-bottom:1px solid #eee;
+}
+
+.netLine{
+    background:#fff8e1;
+}
+.purchaseTotal{
+    text-align:right;
+    padding:0 15px 15px 15px;
+    font-size:16px;
+    font-weight:bold;
+    color:#d84315;
+}
+</style>
+
+</head>
+<body>
+
+<div class="header">
+Merchant Transaction Details
+</div>
+
+<div
+id="customerName"
+class="customerName">
+</div>
+
+<div id="ledgerArea">
+
+    <div class="loading">
+        Loading...
+    </div>
+
+</div>
+
+<script>
+
+loadLedger();
+
+async function loadLedger(){
+
+    const customer =
+    JSON.parse(
+        localStorage.getItem("customer")
+    );
+
+    if(!customer){
+
+        location.href = "index.html";
+        return;
+
+    }
+
+    document.getElementById(
+        "customerName"
+    ).innerHTML =
+    customer.name || customer.name_tam || "";
+
+    try{
+
+        const response =
+        await fetch(
+            "/ledger/" + customer.id
+        );
+
+        const data =
+        await response.json();
+
+        const area =
+        document.getElementById(
+            "ledgerArea"
+        );
+
+        area.innerHTML = "";
+
+        if(data.length === 0){
+
+            area.innerHTML =
+            '<div class="noData">No Transactions Found</div>';
+
+            return;
+
+        }
+
+        data.forEach(item => {
+
+            const dt =
+            new Date(item.dt);
+
+            const dateText =
+            dt.toLocaleDateString(
+                "en-GB"
+            );
+
+
+            const opening =
+            Number(item.opg || 0) +
+            Number(item.opg_pur || 0);
+
+            const receipt =
+            Number(item.rec || 0);
+
+            let receiptDetails =
+            (item.det_rec || "")
+            .replace(/^,\s*/, '')
+            .split(',')
+            .map(x => x.trim())
+            .filter(x => x !== '')
+            .join('<br>');            
+
+            const purchase =
+            Number(item.pur || 0);
+
+            const netAmount =
+            opening - receipt;
+
+            const closingAmount =
+            netAmount + purchase;
+
+            let details =
+            item.det_pur_wt || "";
+
+            details =
+            details
+            .replace(/^,\s*/, '')
+            .split(',')
+            .map(x => {
+
+                x = x.trim();
+
+                const match = x.match(/^(.*?)\s+([\d.]+)x([\d.]+)$/);
+
+                if(match){
+
+                    const itemName = match[1];
+                    const qty = Number(match[2]);
+                    const rate = Number(match[3]);
+                    const amount = qty * rate;
+                    const qtyDisplay =
+                        Number.isInteger(qty)
+                        ? qty.toString()
+                        : qty.toFixed(3);                    
+
+                    return `${itemName} ${qtyDisplay} x ${rate} = ${amount.toLocaleString()}`;
+
+                }
+
+                return x;
+
+            })
+            .filter(x => x !== '')
+            .join('<br>');
+
+            const html = `
+
+            <div class="reportDate">
+                ${dateText}
+            </div>           
+            <div class="card">
+
+
+
+            <div class="ledgerLine">
+                முன் பற்று : ${opening.toLocaleString()}
+            </div>
+
+  
+
+        <div class="ledgerLine">
+            வரவு : ${receipt.toLocaleString()}
+            <span style="color:#666;font-size:14px;">
+                ${item.det_rec
+                    ? '[ ' + item.det_rec
+                        .replace(/^,\s*/, '')
+                        .replace(/,\s*/g, ' + ') + ' ]'
+                    : ''}
+            </span>
+        </div>            
+
+            <div class="ledgerLine netLine">
+                வரவு நீங்கி பற்று : ${netAmount.toLocaleString()}
+            </div>
+
+            <div class="purchaseRow">
+
+                <div class="itemDetails">${details}</div>
+
+            </div>
+
+            <div class="purchaseTotal">
+                மொத்த பில் தொகை :
+                ${purchase.toLocaleString()}
+            </div>
+
+            <div class="closingRow">
+                ${dateText} தேதியின் ஆக மொத்த பற்று :
+                ${closingAmount.toLocaleString()}
+            </div>
+
+            </div>
+            <div class="daySeparator"></div>
+
+            `;
+
+            area.innerHTML += html;
+
+        });
+        
+        window.scrollTo(
+            0,
+            document.body.scrollHeight
+        );
+        
+    }
+    catch(err){
+
+        console.log(err);
+
+        document.getElementById(
+            "ledgerArea"
+        ).innerHTML =
+        '<div class="noData">Server Error</div>';
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
