@@ -110,6 +110,7 @@ body{
     transition:0.3s;
     z-index:2000;
     padding:10px;
+    scroll-behavior:smooth;
 }
 
 .cartPopup.show{
@@ -120,8 +121,14 @@ body{
     border:1px solid #ccc;
     padding:10px;
     margin-bottom:5px;
+    transition:0.5s;
 }
 
+.cartItem.highlight{
+    box-shadow:0 0 15px #4CAF50;
+    border:2px solid #4CAF50;
+    background:#f2fff2;
+}
 .cartItem button{
     width:35px;
     height:35px;
@@ -244,6 +251,7 @@ To remove a product, enter Qty = 0.
 
 let products = [];
 let cart = [];
+let lastAddedId = null;
 
 /* Customer */
 
@@ -395,7 +403,11 @@ function addToCart(id,name,name_tam){
 
     });
 
+    lastAddedId = id;
+
     refreshCart();
+
+    openCart();
 
     showMessage(
     name_tam + " added to cart"
@@ -416,7 +428,7 @@ function refreshCart(){
         totalQty += item.qty;
 
         html += `
-        <div class="cartItem">
+        <div class="cartItem" id="cart_${item.prod_id}">
 
             <b>${item.name_tam}</b>
             <br><br>
@@ -450,6 +462,39 @@ function refreshCart(){
     document.getElementById(
     "totalQty"
     ).innerHTML = totalQty;
+  
+    if(lastAddedId){
+
+        const row = document.getElementById(
+            "cart_" + lastAddedId
+        );
+
+        if(row){
+
+            // Smoothly scroll the new item into view
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            // Wait until scrolling finishes
+            setTimeout(function(){
+
+                row.classList.add("highlight");
+
+                setTimeout(function(){
+
+                    row.classList.remove("highlight");
+
+                },3000);
+
+            },400);
+
+        }
+
+        lastAddedId = null;
+
+    }
 }
 
 function changeQty(id,qty){
