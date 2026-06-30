@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Merchant Transaction Details</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:10px;
+    font-family:Arial,sans-serif;
+    background:#f3f3f3;
+}
+
+.header{
+    background:#1976d2;
+    color:white;
+    text-align:center;
+    padding:15px;
+    font-size:22px;
+    font-weight:bold;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+.customerName{
+    text-align:center;
+    font-size:16px;
+    font-weight:bold;
+    margin-bottom:15px;
+    color:#444;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    margin-bottom:35px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,.18);
+    border:2px solid #e0e0e0;
+}
+.netRow{
+    background:#fff8e1;
+    font-weight:bold;
+}
+.daySeparator{
+    height:4px;
+    background:#1976d2;
+    margin:25px 20px;
+    border-radius:10px;
+}
+.dateHeader{
+    background:#1565c0;
+    color:white;
+    text-align:center;
+    padding:15px;
+    font-size:20px;
+    font-weight:bold;
+    letter-spacing:1px;
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+}
+.reportDate{
+    background:#0d47a1;
+    color:white;
+    padding:15px;
+    text-align:left;
+    font-size:22px;
+    font-weight:bold;
+    border-radius:10px;
+    margin-top:35px;
+    margin-bottom:12px;
+    padding-left:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+}
+.amountLabel{
+    font-weight:bold;
+    color:#444;
+}
+
+.amountValue{
+    font-weight:bold;
+    font-size:16px;
+}
+.amountRow{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 15px;
+    border-bottom:1px solid #eee;
+    font-size:15px;
+}
+
+.netRow{
+    background:#fafafa;
+    font-weight:bold;
+}
+
+.purchaseRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:15px;
+}
+
+.itemDetails{
+    flex:1;
+    line-height:1.8;
+    white-space:pre-wrap;
+    color:#333;
+}
+
+.purchaseAmt{
+    font-size:18px;
+    font-weight:bold;
+    margin-left:15px;
+    color:#d84315;
+}
+
+.closingRow{
+    background:#e8f5e9;
+    color:#1b5e20;
+    padding:15px 15px 15px 20px;
+    font-size:18px;
+    font-weight:bold;
+    text-align:left;
+}
+
+.loading{
+    text-align:center;
+    font-size:18px;
+    margin-top:30px;
+}
+
+.noData{
+    text-align:center;
+    font-size:18px;
+    margin-top:30px;
+    color:red;
+}
+.ledgerLine{
+    padding:10px 15px;
+    font-size:16px;
+    font-weight:bold;
+    border-bottom:1px solid #eee;
+}
+
+.netLine{
+    background:#fff8e1;
+}
+.purchaseTotal{
+    text-align:right;
+    padding:0 15px 15px 15px;
+    font-size:16px;
+    font-weight:bold;
+    color:#d84315;
+}
+</style>
+
+</head>
+<body>
+
+<div class="header">
+Merchant Transaction Details
+</div>
+
+<div
+id="customerName"
+class="customerName">
+</div>
+
+<div id="ledgerArea">
+
+    <div class="loading">
+        Loading...
+    </div>
+
+</div>
+
+<script>
+
+loadLedger();
+
+async function loadLedger(){
+
+    const customer =
+    JSON.parse(
+        localStorage.getItem("customer")
+    );
+    //console.log("Customer:", customer);
+
+    if(!customer){
+
+        location.href = "/pks";
+        return;
+
+    }
+
+    document.getElementById(
+        "customerName"
+    ).innerHTML =
+    customer.name || customer.name_tam || "";
+
+    try{
+       // console.log("Customer ID:", customer.id);
+
+
+        const response =
+        await fetch(
+            "/ledger/" + customer.id
+        );
+
+console.log("Response Status:", response.status);
+
+        const data =
+        await response.json();
+       // console.log("Ledger Data:", data);
+
+        const area =
+        document.getElementById(
+            "ledgerArea"
+        );
+
+        area.innerHTML = "";
+
+        if(data.length === 0){
+
+            area.innerHTML =
+            '<div class="noData">No Transactions Found</div>';
+
+            return;
+
+        }
+
+        data.forEach(item => {
+
+            const dt =
+            new Date(item.dt);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const txnDate = new Date(dt);
+            txnDate.setHours(0, 0, 0, 0);
+
+            let dateText = dt.toLocaleDateString("en-GB");
+
+            if (txnDate.getTime() === today.getTime()) {
+                dateText += " (Today)";
+            }
+            else if (txnDate.getTime() === yesterday.getTime()) {
+                dateText += " (Yesterday)";
+            }
+
+
+            const opening =
+            Number(item.opg || 0) +
+            Number(item.opg_pur || 0);
+
+            const receipt =
+            Number(item.rec || 0);
+
+            let receiptDetails =
+            (item.det_rec || "")
+            .replace(/^,\s*/, '')
+            .split(',')
+            .map(x => x.trim())
+            .filter(x => x !== '')
+            .join('<br>');            
+
+            const purchase =
+            Number(item.pur || 0);
+
+            const payment =
+            Number(item.pay || 0);
+
+            const netAmount =
+            opening - receipt;
+
+            const closingAmount =
+            netAmount + purchase+payment;
+
+            let details =
+            item.det_pur_wt || "";
+
+            details =
+            details
+            .replace(/^,\s*/, '')
+            .split(',')
+            .map(x => {
+
+                x = x.trim();
+
+                const match = x.match(
+                    /^(.*?)\s*([\d.]+)\s*x\s*([\d.]+)\s*(.*)$/i
+                );
+
+                if (match) {
+
+                    const itemName = match[1].trim();
+                    const qty = Number(match[2]);
+                    const rate = Number(match[3]);
+                    const note = match[4].trim();
+
+                    const amount = qty * rate;
+
+                    const qtyDisplay =
+                        Number.isInteger(qty)
+                        ? qty.toString()
+                        : qty.toFixed(3);
+
+                    let result =
+                        `${itemName} ${qtyDisplay} x ${rate} = ${amount.toLocaleString()}`;
+
+                    if (note !== "") {
+                        result += " " + note;
+                    }
+
+                    return result;
+                }
+
+                return x;
+
+            })
+            .filter(x => x !== '')
+            .join('<br>');
+
+            const html = `
+
+            <div class="reportDate">
+                ${dateText}
+            </div>           
+            <div class="card">
+
+
+
+            <div class="ledgerLine">
+                முன் பற்று : ${opening.toLocaleString()}
+            </div>
+
+  
+            ${receipt > 0 ? `
+                <div class="ledgerLine">
+                    வரவு : ${receipt.toLocaleString()}
+                    <span style="color:#666;font-size:14px;">
+                            ${(() => {
+
+                                let details = (item.det_rec || "")
+                                    .replace(/^,\s*/, "")
+                                    .trim();
+
+                                if (details === "") return "";
+
+                                const numbers = details.match(/\d+(\.\d+)?/g) || [];
+
+                                // Only one amount and it equals the receipt amount
+                                if (
+                                    numbers.length === 1 &&
+                                    Number(numbers[0]) === receipt
+                                ) {
+
+                                    // Remove only the amount, keep the remaining text
+                                    let text = details.replace(
+                                        new RegExp("\\b" + receipt + "\\b"),
+                                        ""
+                                    ).trim();
+
+                                    text = text.replace(/\s+/g, " ");
+
+                                    if (text === "") {
+                                        return "";
+                                    }
+
+                                    return "[ " + text + " ]";
+                                }
+
+                                return "[ " + details.replace(/,\s*/g, " + ") + " ]";
+
+                            })()}
+                    </span>
+                </div>  
+                   
+
+                <div class="ledgerLine netLine">
+                    வரவு நீங்கி பற்று : ${netAmount.toLocaleString()}
+                </div>
+            ` : ""}  
+            
+            ${(() => {
+
+                const payment = Number(item.pay || 0);
+
+                if (payment <= 0) return "";
+
+                let details = (item.det_pay || "")
+                    .replace(/^,\s*/, "")
+                    .trim();
+
+                // No details available
+                if (details === "") {
+
+                    return `
+                    <div class="ledgerLine">
+                        பற்று செலுத்தியது : ${payment.toLocaleString()}
+                    </div>`;
+                }
+
+                const numbers = details.match(/\d+(\.\d+)?/g) || [];
+
+                // If only one amount and it equals the payment amount,
+                // remove only the amount and keep the payment mode.
+                if (
+                    numbers.length === 1 &&
+                    Number(numbers[0]) === payment
+                ) {
+
+                    let text = details.replace(
+                        new RegExp("\\b" + payment + "\\b"),
+                        ""
+                    ).trim();
+
+                    text = text.replace(/\s+/g, " ");
+
+                    if (text === "") {
+
+                        return `
+                        <div class="ledgerLine">
+                            பற்று செலுத்தியது : ${payment.toLocaleString()}
+                        </div>`;
+                    }
+
+                    return `
+                    <div class="ledgerLine">
+                        பற்று செலுத்தியது : ${payment.toLocaleString()}
+                        <span style="color:#666;font-size:14px;">
+                            [ ${text} ]
+                        </span>
+                    </div>`;
+                }
+
+                return `
+                <div class="ledgerLine">
+                    பற்று செலுத்தியது : ${payment.toLocaleString()}
+                    <span style="color:#666;font-size:14px;">
+                        [ ${details.replace(/,\s*/g, " + ")} ]
+                    </span>
+                </div>`;
+
+            })()}
+            
+            <div class="purchaseRow">
+
+                <div class="itemDetails">${details}</div>
+
+            </div>
+
+            <div class="purchaseTotal">
+                மொத்த பில் தொகை :
+                ${purchase.toLocaleString()}
+            </div>
+
+            <div class="closingRow">
+                ${dateText} தேதியின் ஆக மொத்த பற்று :
+                ${closingAmount.toLocaleString()}
+            </div>
+
+            </div>
+            <div class="daySeparator"></div>
+
+            `;
+
+            area.innerHTML += html;
+
+        });
+        
+        window.scrollTo(
+            0,
+            document.body.scrollHeight
+        );
+        
+    }
+    catch(err){
+
+        console.log(err);
+
+        document.getElementById(
+            "ledgerArea"
+        ).innerHTML =
+        '<div class="noData">Server Error</div>';
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
