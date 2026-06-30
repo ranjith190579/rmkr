@@ -3,7 +3,7 @@ import session from 'express-session';
 import { MongoClient, ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { downloadOrders } from './downloadorders.js';
+//import { downloadOrders } from './downloadorders.js';
 import path from 'path';
 
 dotenv.config();
@@ -312,7 +312,7 @@ app.post('/markdownloaded', async (req, res) => {
     });
 
 });
-app.post('/login_flower_pks', async (req, res) => {
+app.post('/login_pks', async (req, res) => {
 
     const {
         mob_no,
@@ -350,10 +350,17 @@ app.post('/login_flower_pks', async (req, res) => {
         month === Number(birthMonth)
     ) {
 
+        req.session.customer = {
+            id: customer.id,
+            phone: customer.phone
+        };
+
         return res.json({
             success: true,
             customer
         });
+
+
 
     }
 
@@ -392,7 +399,7 @@ app.get('/pending-order-count', checkAdmin, async (req, res) => {
 
 });
 
-
+/*
 app.get('/download-orders', checkAdmin, async (req, res) => {
 
     try {
@@ -415,6 +422,7 @@ app.get('/download-orders', checkAdmin, async (req, res) => {
     }
 
 });
+*/
 
 app.post('/admin-login', (req, res) => {
 
@@ -472,6 +480,7 @@ app.get('/admin-logout', (req, res) => {
 
 });
 
+/*
 app.get('/downloadorders', (req, res) => {
 
     if (!req.session.isAdmin) {
@@ -492,6 +501,7 @@ app.get('/downloadorders', (req, res) => {
     );
 
 });
+*/
 
 app.get('/devadas', (req, res) => {
 
@@ -524,7 +534,7 @@ app.get('/order', (req, res) => {
     if (!req.session.customer) {
 
         //return res.redirect('/login1.html');
-    res.sendFile(
+        return res.sendFile(
         path.join(process.cwd(),
         'private',
         'login_devadas.html')
@@ -538,6 +548,47 @@ app.get('/order', (req, res) => {
             process.cwd(),
             'private',
             'order.html'
+        )
+    );
+
+});
+
+app.get('/pks', (req, res) => {
+
+    res.sendFile(
+        path.join(process.cwd(),
+        'private',
+        'login_pks.html')
+    );
+
+});
+
+app.get('/mer_trans_det', (req, res) => {
+
+
+
+
+    //if (!req.session.customer) {
+    //    return res.redirect('/');
+    //}
+
+    if (!req.session.customer) {
+
+        //return res.redirect('/login1.html');
+        return res.sendFile(
+        path.join(process.cwd(),
+        'private',
+        'login_pks.html')
+    );        
+
+    }
+
+
+    res.sendFile(
+        path.join(
+            process.cwd(),
+            'private',
+            'merchant_transaction_details.html'
         )
     );
 
