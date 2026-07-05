@@ -51,14 +51,18 @@ app.post('/login', async (req, res) => {
         birthMonth
     } = req.body;
 
-    const customer =
-    await db.collection("customers")
     
+      
+    
+    const customer =
+    await db.collection("tbl_customer_mas")
+       
     .findOne({
-        phone: Number(phone)
+        mob_no: Number(phone)
     });
+
      //console.log("Records Found:");
-        //console.log(customer);
+       // console.log(customer);
     if (!customer) {
 
         return res.json({
