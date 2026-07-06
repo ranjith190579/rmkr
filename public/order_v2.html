@@ -29,6 +29,145 @@ body{
 
 }
 
+/*=========================================
+    SELECTED POPUP
+=========================================*/
+.selectedRow{
+
+    display:flex;
+    grid-template-columns:1fr 90px;
+
+    gap:15px;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:10px;
+
+    border-bottom:1px solid #ddd;
+
+}
+
+.selectedName{
+
+    flex:1;
+
+}
+
+.selectedRow input{
+
+    width:70px;
+
+    text-align:center;
+
+    padding:5px;
+
+}
+.selectedPopup{
+
+    display:none;
+
+    position:fixed;
+
+    top:50%;
+
+    left:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:650px;
+    max-width:90%;
+
+    max-height:80%;
+
+    background:#fff;
+
+    border:1px solid #999;
+
+    border-radius:8px;
+
+    box-shadow:0 0 20px rgba(0,0,0,.3);
+
+    z-index:9999;
+
+    overflow:hidden;
+
+}
+
+.selectedHeader{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:12px;
+
+    background:#1976d2;
+
+    color:white;
+
+}
+
+.selectedHeader h2{
+
+    margin:0;
+
+    font-size:20px;
+
+}
+
+.closePopup{
+
+    background:red;
+
+    color:white;
+
+    border:none;
+
+    width:35px;
+
+    height:35px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+}
+
+#selectedList{
+
+    height:350px;
+
+    overflow:auto;
+
+    padding:10px;
+
+}
+
+.selectedFooter{
+
+    padding:10px;
+
+    border-top:1px solid #ddd;
+
+    text-align:center;
+
+}
+
+.selectedFooter button{
+
+    padding:10px 20px;
+
+    margin:5px;
+
+    cursor:pointer;
+
+}
 
 /* ==========================
         HEADER
@@ -451,12 +590,8 @@ body{
 
         <div class="filterPanel">
 
-            <button
-                id="btnToggleView"
-                onclick="toggleView()">
-
-                Show Selected (0)
-
+            <button id="btnToggleView" onclick="openSelectedPopup()">
+                Show Selected
             </button>
 
         </div>
@@ -1021,7 +1156,10 @@ function updateQty(prod_id, qty){
 
     updateSummary();
     
-    filterProducts();
+   // filterProducts();
+
+    //refreshSelectedPopup();
+    updateSelectedRow(prod_id);
 
 }
 
@@ -1105,13 +1243,14 @@ function filterProducts(){
 
     // If user types anything while viewing selected,
     // automatically return to All Products.
+    /*
     if(search != "" && currentView == "selected"){
 
         currentView = "all";
 
         updateToggleButton();
 
-    }
+    }*/
 
     products.forEach(function(product){
 
@@ -1147,7 +1286,302 @@ function filterProducts(){
 
 }
 
+function openSelectedPopup(){
+
+    let html = "";
+
+    let productCount = 0;
+    let totalQty = 0;
+
+    products.forEach(function(product){
+
+        if(product.qty > 0){
+
+            productCount++;
+            totalQty += Number(product.qty);
+
+            html += `
+            <div class="selectedRow" id="selected_${product.prod_id}" >
+
+                <div class="selectedName">
+
+                    <b>${product.name_tam}</b><br>
+                    <small>${product.name}</small>
+
+                </div>
+
+                <input
+                    type="number"
+                    min="0"
+                    value="${product.qty}"
+                    onchange="changeSelectedQty('${product.prod_id}',this.value)">
+
+            </div>
+            `;
+
+        }
+
+    });
+
+    if(productCount==0){
+
+        html = `
+        <div style="text-align:center;padding:30px;color:#888;">
+            No products selected.
+        </div>
+        `;
+
+    }
+
+    document.getElementById("selectedList").innerHTML = html;
+
+    document.getElementById("selectedSummary").innerHTML =
+        "Products : " + productCount +
+        "<br>Total Qty : " + totalQty;
+
+    document.getElementById("selectedPopup").style.display="block";
+
+}
+function changeSelectedQty(prod_id, qty){
+
+    qty = Number(qty);
+
+    if(isNaN(qty))
+        qty = 0;
+
+    const product = products.find(function(p){
+
+        return p.prod_id == prod_id;
+
+    });
+
+    if(!product)
+        return;
+
+    product.qty = qty;
+
+    // Update the main textbox
+    const txt = document.getElementById("qty_" + prod_id);
+
+    if(txt){
+
+        if(qty<=0){
+
+            txt.value="";
+
+        }
+        else{
+
+            txt.value=qty;
+
+        }
+
+    }
+
+    updateCard(prod_id);
+    updateSummary();
+
+    // Refresh popup
+    //refreshSelectedPopup();
+    updateSelectedRow(prod_id);
+
+}
+
+function closeSelectedPopup(){
+
+    document
+    .getElementById("selectedPopup")
+    .style.display="none";
+
+}
+
+function refreshSelectedPopup(){
+
+    const popup =
+    document.getElementById("selectedPopup");
+
+    if(popup.style.display != "block")
+        return;
+
+    openSelectedPopup();
+
+}
+
+function refreshSelectedSummary(){
+
+    let productCount = 0;
+    let totalQty = 0;
+
+    products.forEach(function(product){
+
+        if(product.qty > 0){
+
+            productCount++;
+
+            totalQty += Number(product.qty);
+
+        }
+
+    });
+
+    document.getElementById("selectedSummary").innerHTML =
+        "Products : " + productCount +
+        "<br>Total Qty : " + totalQty;
+
+}
+function updateSelectedRow(prod_id){
+
+    const row =
+    document.getElementById(
+        "selected_" + prod_id
+    );
+
+    const product =
+    products.find(function(p){
+
+        return p.prod_id == prod_id;
+
+    });
+
+    if(!product) return;
+
+    // Product removed
+    if(product.qty<=0){
+
+        if(row){
+
+            row.remove();
+
+        }
+
+        refreshSelectedSummary();
+
+        return;
+
+    }
+
+    // Product already exists
+    if(row){
+
+        const txt =
+        row.querySelector("input");
+
+        if(txt){
+
+            txt.value = product.qty;
+
+        }
+
+        refreshSelectedSummary();
+
+        return;
+
+    }
+
+    // New selected product
+    addSelectedRow(product);
+
+}
+function addSelectedRow(product){
+
+    const list =
+    document.getElementById("selectedList");
+
+    const div =
+    document.createElement("div");
+
+    div.className = "selectedRow";
+
+    div.id =
+    "selected_" + product.prod_id;
+
+    div.innerHTML = `
+
+        <div class="selectedName">
+
+            <b>${product.name_tam}</b><br>
+
+            <small>${product.name}</small>
+
+        </div>
+
+        <input
+
+            type="number"
+
+            value="${product.qty}"
+
+            min="0"
+
+            onchange="changeSelectedQty(
+                '${product.prod_id}',
+                this.value
+            )">
+
+    `;
+
+    list.appendChild(div);
+
+    refreshSelectedSummary();
+
+}
+
 </script>
+
+<!-- ==========================================
+     SELECTED PRODUCTS POPUP
+=========================================== -->
+
+<div id="selectedPopup" class="selectedPopup">
+
+    <div class="selectedHeader">
+
+        <h2>Selected Products</h2>
+
+        <button
+            class="closePopup"
+            onclick="closeSelectedPopup()">
+
+            ✖
+
+        </button>
+
+    </div>
+
+    <div id="selectedList">
+
+        <!-- Selected products will come here -->
+
+    </div>
+
+    <div class="selectedFooter">
+
+        <div id="selectedSummary">
+
+            Products : 0<br>
+            Total Qty : 0
+
+        </div>
+
+        <br>
+
+        <button
+            onclick="closeSelectedPopup()">
+
+            Continue Shopping
+
+        </button>
+
+        <button
+            onclick="saveOrder()">
+
+            Place Order
+
+        </button>
+
+    </div>
+
+</div>
 
 </body>
 
