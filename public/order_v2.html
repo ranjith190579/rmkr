@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Order Entry V2</title>
+
+<link rel="preconnect"
+      href="https://fonts.googleapis.com">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f5f5f5;
+    color:#333;
+
+}
+
+
+/* ==========================
+        HEADER
+========================== */
+
+.header{
+
+    position:sticky;
+    top:0;
+
+    background:#ffffff;
+
+    padding:15px;
+
+    border-bottom:1px solid #dcdcdc;
+
+    z-index:999;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+
+}
+
+.customerPanel h2{
+
+    font-size:22px;
+
+    color:#1976d2;
+
+    margin-bottom:12px;
+
+}
+
+
+/* ==========================
+        SEARCH
+========================== */
+
+.searchPanel{
+
+    margin-bottom:12px;
+
+}
+
+#txtSearch{
+
+    width:100%;
+
+    padding:12px;
+
+    font-size:17px;
+
+    border:1px solid #bdbdbd;
+
+    border-radius:8px;
+
+    outline:none;
+
+}
+
+#txtSearch:focus{
+
+    border-color:#2196F3;
+
+    box-shadow:0 0 5px rgba(33,150,243,.35);
+
+}
+
+
+/* ==========================
+        SUMMARY
+========================== */
+
+.summaryPanel{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    background:#f8fbff;
+
+    border:1px solid #d8e8ff;
+
+    border-radius:8px;
+
+    padding:10px;
+
+    font-size:15px;
+
+    font-weight:bold;
+
+}
+
+.summaryPanel span{
+
+    color:#0d47a1;
+
+}
+
+
+/* ==========================
+        PRODUCT AREA
+========================== */
+
+#productContainer{
+
+    padding:15px;
+
+    padding-bottom:90px;
+
+}
+
+
+/* ==========================
+        PRODUCT CARD
+========================== */
+
+.productCard{
+
+    background:#ffffff;
+
+    border:1px solid #dddddd;
+
+    border-radius:10px;
+
+    padding:12px;
+
+    margin-bottom:10px;
+
+    transition:.20s;
+
+}
+
+.productCard:hover{
+
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+
+}
+
+
+/* Selected Product */
+
+.productCard.selected{
+
+    background:#e8f5e9;
+
+    border:2px solid #4CAF50;
+
+}
+
+
+/* ==========================
+        TOP ROW
+========================== */
+
+.productTop{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.productName{
+
+    flex:1;
+
+    font-size:19px;
+
+    font-weight:bold;
+
+    color:#212121;
+
+}
+
+
+/* ==========================
+        TAMIL NAME
+========================== */
+
+.productTamil{
+
+    margin-top:6px;
+
+    color:#757575;
+
+    font-size:14px;
+
+}
+
+
+/* ==========================
+        QTY BOX
+========================== */
+
+.qtyArea{
+
+    width:90px;
+
+}
+
+.txtQty{
+
+    width:100%;
+
+    padding:8px;
+
+    text-align:center;
+
+    font-size:18px;
+
+    border:1px solid #9e9e9e;
+
+    border-radius:6px;
+
+}
+
+.txtQty:focus{
+
+    border-color:#4CAF50;
+
+    outline:none;
+
+    box-shadow:0 0 5px rgba(76,175,80,.35);
+
+}
+
+
+/* ==========================
+        FOOTER
+========================== */
+
+.footer{
+
+    position:fixed;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    background:#ffffff;
+
+    padding:12px;
+
+    border-top:1px solid #cccccc;
+
+}
+
+#btnPlaceOrder{
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#2e7d32;
+
+    color:white;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+}
+
+#btnPlaceOrder:hover{
+
+    background:#1b5e20;
+
+}
+
+
+/* ==========================
+        MOBILE
+========================== */
+
+@media(max-width:600px){
+
+.productName{
+
+    font-size:17px;
+
+}
+
+.txtQty{
+
+    font-size:17px;
+
+}
+
+.summaryPanel{
+
+    font-size:14px;
+
+}
+.filterPanel{
+
+    margin-top:10px;
+
+}
+
+#btnToggleView{
+
+    width:100%;
+
+    padding:10px;
+
+    border:none;
+
+    border-radius:6px;
+
+    background:#1976d2;
+
+    color:white;
+
+    font-size:15px;
+
+    cursor:pointer;
+
+}
+
+.filterPanel button{
+
+    flex:1;
+
+    padding:10px;
+
+    border:none;
+
+    border-radius:6px;
+
+    background:#e0e0e0;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+}
+
+.filterPanel button.active{
+
+    background:#2196F3;
+
+    color:white;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ==========================
+     HEADER
+=========================== -->
+
+<div class="header">
+
+    <div class="customerPanel">
+
+        <h2 id="customerName">
+
+            Welcome
+
+        </h2>
+
+    </div>
+
+
+    <div class="searchPanel">
+
+        <input
+            type="text"
+            id="txtSearch"
+            placeholder="Search Product (English / தமிழ்)">
+
+    </div>
+
+
+    <div class="summaryPanel">
+
+        <div>
+
+            Selected :
+
+            <span id="lblItems">
+
+                0
+
+            </span>
+
+        </div>
+
+        <div>
+
+            Total Qty :
+
+            <span id="lblQty">
+
+                0
+
+            </span>
+
+        </div>
+
+        <div class="filterPanel">
+
+            <button
+                id="btnToggleView"
+                onclick="toggleView()">
+
+                Show Selected (0)
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================
+     PRODUCT LIST
+=========================== -->
+
+<div
+id="productContainer">
+
+<!--
+
+Products will come here
+
+-->
+
+</div>
+
+
+
+
+<!-- ==========================
+     FOOTER
+=========================== -->
+
+<div class="footer">
+
+<button
+id="btnPlaceOrder" onclick="saveOrder()">
+
+PLACE ORDER
+
+</button>
+
+</div>
+
+
+
+
+<!-- ==========================
+     TEMPLATE
+=========================== -->
+
+
+
+
+
+
+<script>
+
+const products = [];
+
+let customer = null;
+let pendingOrderId = null;
+let currentView = "all";
+
+/*=============================
+    PAGE LOAD
+=============================*/
+
+window.onload = function () {
+
+    loadCustomer();
+
+    loadProducts();
+
+};
+
+
+function toggleView(){
+
+    if(currentView=="all"){
+
+        currentView="selected";
+
+    }else{
+
+        currentView="all";
+
+    }
+
+    updateToggleButton();
+
+    filterProducts();
+
+}
+
+function updateToggleButton(){
+
+    let count=0;
+
+    products.forEach(function(p){
+
+        if(p.qty>0){
+
+            count++;
+
+        }
+
+    });
+
+    const btn=
+    document.getElementById("btnToggleView");
+
+    if(currentView=="all"){
+
+        btn.innerHTML=
+        "Show Selected ("+count+")";
+
+    }
+    else{
+
+        btn.innerHTML=
+        "Show All Products";
+
+    }
+
+}
+
+function showAllProducts(){
+
+    currentView = "all";
+
+    document
+    .getElementById("btnShowAll")
+    .classList.add("active");
+
+    document
+    .getElementById("btnShowSelected")
+    .classList.remove("active");
+
+    filterProducts();
+
+}
+
+
+
+function showSelectedProducts(){
+
+    currentView = "selected";
+
+    document
+    .getElementById("btnShowSelected")
+    .classList.add("active");
+
+    document
+    .getElementById("btnShowAll")
+    .classList.remove("active");
+
+    filterProducts();
+
+}
+
+/*=============================
+    LOAD CUSTOMER
+=============================*/
+
+function loadCustomer() {
+
+    customer = JSON.parse(localStorage.getItem("customer"));
+
+    if (customer) {
+
+        document.getElementById("customerName").innerHTML =
+            "Welcome " + customer.name;
+
+    }
+    else {
+
+        document.getElementById("customerName").innerHTML =
+            "Welcome";
+
+    }
+
+}
+
+
+/*=============================
+    LOAD PRODUCTS
+=============================*/
+
+async function loadProducts() {
+
+    try {
+
+        const response = await fetch("/products");
+
+        const data = await response.json();
+
+        products.length = 0;
+
+        data.forEach(function (p) {
+
+            products.push({
+
+                prod_id: p.prod_id,
+
+                name: p.name,
+
+                name_tam: p.name_tam || "",
+
+                qty: 0,
+
+                searchText: (
+                    (p.name || "") + " " +
+                    (p.name_tam || "")
+                ).toLowerCase()
+
+            });
+
+        });
+
+        showProducts(products);
+        loadPendingOrder();
+
+    }
+    catch (err) {
+
+        alert("Unable to load products.");
+
+        console.log(err);
+
+    }
+
+}
+
+async function loadPendingOrder(){
+
+    if(customer==null)
+        return;
+
+    try{
+
+        const response =
+        await fetch("/pendingorder/" + customer.id);
+
+        const order =
+        await response.json();
+
+        if(order==null)
+            return;
+
+        pendingOrderId = order._id;
+
+        if(order.items==null)
+            return;
+
+        order.items.forEach(function(item){
+
+            const product =
+            products.find(function(p){
+
+                return p.prod_id==item.prod_id;
+
+            });
+
+            if(product){
+
+                product.qty = Number(item.qty);
+
+            }
+
+        });
+
+        refreshScreen();
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+    }
+
+}
+
+function refreshScreen(){
+
+    products.forEach(function(product){
+
+        const txt =
+        document.getElementById(
+            "qty_" + product.prod_id
+        );
+
+        if(txt){
+
+            txt.value =
+            product.qty==0 ? "" : product.qty;
+
+        }
+
+        updateCard(product.prod_id);
+
+    });
+
+    updateSummary();
+
+}
+
+/*=============================
+    BUILD ORDER OBJECT
+=============================*/
+
+function buildOrder(){
+
+    const items = [];
+
+    products.forEach(function(product){
+
+        if(product.qty > 0){
+
+            items.push({
+
+                prod_id: product.prod_id,
+
+                name: product.name,
+
+                name_tam: product.name_tam,
+
+                qty: product.qty
+
+            });
+
+        }
+
+    });
+
+    return{
+
+        order_id: pendingOrderId,
+
+        customer_id: customer.id,
+
+        customer_name: customer.name,
+
+        items: items
+
+    };
+
+}
+
+/*=============================
+    SAVE ORDER
+=============================*/
+
+async function saveOrder(){
+
+    const order = buildOrder();
+
+    if(order.items.length==0){
+
+        alert("Please enter quantity.");
+
+        return;
+
+    }
+
+    try{
+
+        const response =
+        await fetch("/saveorder",{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify(order)
+
+        });
+
+        const result =
+        await response.json();
+
+        if(result.success){
+
+            if(result.order_id){
+
+                pendingOrderId =
+                result.order_id;
+
+            }
+
+            alert(result.message);
+
+        }
+        else{
+
+            alert(result.message);
+
+        }
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to save order.");
+
+    }
+
+}
+
+/*=============================
+    SHOW PRODUCTS
+=============================*/
+
+function showProducts(list) {
+
+    const container =
+        document.getElementById("productContainer");
+
+    container.innerHTML = "";
+
+    list.forEach(function (product) {
+
+        container.appendChild(createProductCard(product));
+
+    });
+
+}
+
+
+/*=============================
+    CREATE PRODUCT CARD
+=============================*/
+
+function createProductCard(product) {
+
+    const card = document.createElement("div");
+    card.id = "card_" + product.prod_id;
+    card.dataset.id = product.prod_id;
+
+    card.className = "productCard";
+
+
+
+    /*---------- TOP ----------*/
+
+    const top = document.createElement("div");
+
+    top.className = "productTop";
+
+
+
+    /*---------- NAME ----------*/
+
+    const name = document.createElement("div");
+
+    name.className = "productName";
+
+    name.innerHTML =
+        product.name_tam || product.name;
+
+
+
+    /*---------- QTY ----------*/
+
+    const qtyArea = document.createElement("div");
+
+    qtyArea.className = "qtyArea";
+
+
+
+    const txtQty = document.createElement("input");
+    txtQty.id = "qty_" + product.prod_id;
+
+    txtQty.type = "number";
+
+    txtQty.min = "0";
+
+    txtQty.value =
+    product.qty==0 ? "" : product.qty;
+
+    txtQty.className = "txtQty";
+
+
+
+    // Save product id in textbox
+
+    txtQty.dataset.id = product.prod_id;
+    txtQty.product = product;
+
+
+    /* Qty Changed */
+
+    txtQty.addEventListener("input", function () {
+
+        updateQty(product.prod_id, this.value);
+
+    });
+
+    qtyArea.appendChild(txtQty);
+
+
+    top.appendChild(name);
+
+    top.appendChild(qtyArea);
+
+
+
+    card.appendChild(top);
+
+
+
+    /*---------- ENGLISH NAME ----------*/
+
+    if (product.name_tam != "") {
+
+        const english = document.createElement("div");
+
+        english.className = "productTamil";
+
+        english.innerHTML = product.name;
+
+        card.appendChild(english);
+
+    }
+
+    if(product.qty>0){
+
+        card.classList.add("selected");
+
+    }
+
+    return card;
+
+}
+
+/*=============================
+    UPDATE QTY
+=============================*/
+
+function updateQty(prod_id, qty){
+
+    if(qty=="")
+        qty = 0;
+
+        qty = Number(qty);
+
+        if(isNaN(qty))
+            qty = 0;
+
+    const product = products.find(function(p){
+    return p.prod_id == prod_id;
+    });
+
+    if(product == null)
+        return;
+
+    product.qty = qty;
+
+    updateCard(prod_id);
+
+    updateSummary();
+    
+    filterProducts();
+
+}
+
+
+/*=============================
+    UPDATE CARD
+=============================*/
+
+function updateCard(prod_id){
+
+    const txt = document.querySelector(
+        ".txtQty[data-id='" + prod_id + "']"
+    );
+
+    if(!txt)
+        return;
+
+    const card =
+        txt.closest(".productCard");
+
+    if(Number(txt.value)>0){
+
+        card.classList.add("selected");
+
+    }
+    else{
+
+        card.classList.remove("selected");
+
+    }
+
+}
+
+
+/*=============================
+    UPDATE SUMMARY
+=============================*/
+
+function updateSummary(){
+
+    let itemCount = 0;
+
+    let totalQty = 0;
+
+    products.forEach(function(p){
+
+        if(p.qty>0){
+
+            itemCount++;
+
+            totalQty += p.qty;
+
+        }
+
+    });
+
+    document.getElementById("lblItems").innerHTML =
+        itemCount;
+
+    document.getElementById("lblQty").innerHTML =
+        totalQty;
+
+    updateToggleButton();
+
+}
+/*=============================
+    SEARCH
+=============================*/
+
+document.getElementById("txtSearch")
+.addEventListener("input",filterProducts);
+
+
+function filterProducts(){
+
+    const search =
+    document.getElementById("txtSearch")
+    .value
+    .trim()
+    .toLowerCase();
+
+    // If user types anything while viewing selected,
+    // automatically return to All Products.
+    if(search != "" && currentView == "selected"){
+
+        currentView = "all";
+
+        updateToggleButton();
+
+    }
+
+    products.forEach(function(product){
+
+        const card =
+        document.getElementById("card_" + product.prod_id);
+
+        if(!card) return;
+
+        let visible = true;
+
+        if(currentView == "selected"){
+
+            // Ignore search completely
+            visible = product.qty > 0;
+
+        }else{
+
+            if(search != ""){
+
+                visible = product.searchText.includes(search);
+
+            }else{
+
+                visible = true;
+
+            }
+
+        }
+
+        card.style.display = visible ? "" : "none";
+
+    });
+
+}
+
+</script>
+
+</body>
+
+</html>
