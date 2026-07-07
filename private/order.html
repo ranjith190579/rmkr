@@ -29,6 +29,24 @@ body{
 
 }
 
+.productCard.hasQty{
+    background:#E8F5E9;
+}
+
+.productCard.currentRow{
+    border:2px solid #2196F3;
+    box-shadow:0 0 5px #2196F3;
+}
+
+.productCard.focused{
+
+    border:2px solid #2196F3;
+
+    background:#e3f2fd;
+
+    box-shadow:0 0 10px rgba(33,150,243,.4);
+
+}
 /*=========================================
     SELECTED POPUP
 =========================================*/
@@ -1032,6 +1050,13 @@ function showProducts(list) {
 function createProductCard(product) {
 
     const card = document.createElement("div");
+    card.onclick = function(){
+
+        selectProductRow(card);
+
+        txtQty.focus();
+
+    };
     card.id = "card_" + product.prod_id;
     card.dataset.id = product.prod_id;
 
@@ -1081,7 +1106,9 @@ function createProductCard(product) {
 
     txtQty.setAttribute("pattern","[0-9]*");
     txtQty.onfocus = function(){
+        selectProductRow(card);
         this.select();
+        //setFocusedRow(this);
     };
     txtQty.oninput = function(){
 
@@ -1629,6 +1656,8 @@ visibleBoxes[index - 1].select();
 
 function focusQty(box){
 
+    setFocusedRow(box);
+
     box.focus();
     box.select();
 
@@ -1746,6 +1775,38 @@ function searchKeyDown(e){
         focusQty(firstBox);
 
     }
+
+}
+
+function setFocusedRow(box){
+
+    document
+    .querySelectorAll(".productCard")
+    .forEach(function(card){
+
+        card.classList.remove("focused");
+
+    });
+
+    const card = box.closest(".productCard");
+
+    if(card){
+
+        card.classList.add("focused");
+
+    }
+
+}
+
+function selectProductRow(card){
+
+    document.querySelectorAll(".productCard").forEach(function(c){
+
+        c.classList.remove("currentRow");
+
+    });
+
+    card.classList.add("currentRow");
 
 }
 
