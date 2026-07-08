@@ -1110,11 +1110,25 @@ function createProductCard(product) {
         this.select();
         //setFocusedRow(this);
     };
-    txtQty.oninput = function(){
+    txtQty.ondblclick = function () {
 
-            this.value = this.value.replace(/[^0-9]/g,"");
+        focusSearchBox();
 
-        };
+    };
+    txtQty.oninput = function () {
+
+        // Allow only numbers and spaces
+        this.value = this.value.replace(/[^0-9 ]/g, "");
+
+        // If user typed two spaces
+        if (this.value.indexOf("  ") >= 0) {
+
+            focusSearchBox();
+
+            return;
+        }
+
+    };
 
     txtQty.min = "0";
 
@@ -1151,7 +1165,11 @@ function createProductCard(product) {
 
     card.appendChild(top);
 
+    card.ondblclick = function () {
 
+        focusSearchBox();
+
+    };
 
     /*---------- ENGLISH NAME ----------*/
 
@@ -1810,6 +1828,23 @@ function selectProductRow(card){
 
 }
 
+const txtSearch = document.getElementById("txtSearch");
+
+txtSearch.addEventListener("focus", function () {
+    setTimeout(() => this.select(), 0);
+});
+
+function focusSearchBox() {
+
+    const txtSearch = document.getElementById("txtSearch");
+
+    txtSearch.focus();
+
+    setTimeout(function () {
+        txtSearch.select();
+    }, 0);
+
+}
 </script>
 
 <!-- ==========================================
