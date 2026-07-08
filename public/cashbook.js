@@ -1,0 +1,1019 @@
+/*=========================================
+        DAILY CASH BOOK
+        PART - 2A
+=========================================*/
+
+let openingBalance = 0;
+let closingBalance = 0;
+
+let ledger = [];
+
+let editMode = false;
+let editId = null;
+
+/*=========================================
+        API URL
+=========================================*/
+
+//const API = "/cashbook";
+const API = "";
+
+
+/*=========================================
+        LOAD PAGE
+=========================================*/
+
+window.onload = function(){
+
+    setToday();
+
+    registerEvents();
+
+    loadLedger();
+
+};
+
+
+
+
+
+
+/*=========================================
+        TODAY DATE
+=========================================*/
+
+function setToday(){
+
+    const d = new Date();
+
+    const yyyy = d.getFullYear();
+
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+
+    const dd = String(d.getDate()).padStart(2,"0");
+
+    document.getElementById("txtDate").value =
+    yyyy + "-" + mm + "-" + dd;
+
+}
+
+
+/*=========================================
+        EVENTS
+=========================================*/
+
+function registerEvents(){
+
+    document
+    .getElementById("cmbType")
+    .addEventListener(
+        "change",
+        typeChanged
+    );
+
+    document
+    .getElementById("txtAmount")
+    .addEventListener(
+        "input",
+        amountChanged
+    );
+
+    document
+    .getElementById("txtDate")
+    .addEventListener(
+        "change",
+        dateChanged
+    );
+
+    document
+    .getElementById("btnCancel")
+    .addEventListener(
+        "click",
+        closePopup
+    );
+
+    document
+    .getElementById("btnSave")
+    .addEventListener(
+    "click",
+    saveEntry
+    );
+    document
+    .getElementById("txtAmount")
+    .addEventListener(
+    "focus",
+    function(){
+
+        this.select();
+
+    });
+    document
+    .getElementById("txtRemarks")
+    .addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key=="Enter"){
+
+            e.preventDefault();
+
+            saveEntry();
+
+        }
+
+    });
+
+    document
+    .getElementById("editType")
+    .addEventListener(
+    "change",
+    editTypeChanged
+    );
+    document
+    .getElementById("editAmount")
+    .addEventListener(
+    "input",
+    calculateEditClosing
+    );
+    document
+    .getElementById("btnUpdate")
+    .addEventListener(
+    "click",
+    updateEntry
+    );
+    document
+    .getElementById("btnDelete")
+    .addEventListener(
+    "click",
+    deleteEntry
+    );
+
+}
+
+/*=========================================
+        DELETE ENTRY
+=========================================*/
+
+async function deleteEntry(){
+
+    // Part 2D
+
+}
+/*=========================================
+        UPDATE ENTRY
+=========================================*/
+
+async function updateEntry(){
+
+    // Part 2C-5
+
+}
+/*=========================================
+        EDIT CLOSING
+=========================================*/
+
+function calculateEditClosing(){
+
+    let opening =
+    Number(
+    document
+    .getElementById("editOpening")
+    .value
+    .replace(/,/g,"")
+    );
+
+    if(isNaN(opening))
+        opening=0;
+
+    let amount =
+    Number(
+    document
+    .getElementById("editAmount")
+    .value
+    );
+
+    if(isNaN(amount))
+        amount=0;
+
+    const type =
+    document
+    .getElementById("editType")
+    .value;
+
+    let closing=0;
+
+    if(type=="Receipt"){
+
+        closing =
+        opening + amount;
+
+    }
+    else{
+
+        closing =
+        opening - amount;
+
+    }
+
+    document
+    .getElementById("editClosing")
+    .value =
+    formatAmount(closing);
+
+}
+/*=========================================
+        EDIT TYPE
+=========================================*/
+
+function editTypeChanged(){
+
+    const type =
+    document
+    .getElementById("editType")
+    .value;
+
+    document
+    .getElementById("editAmountLabel")
+    .innerHTML =
+    type;
+
+    calculateEditClosing();
+
+}
+/*=========================================
+        LOAD LEDGER
+=========================================*/
+
+/*=========================================
+        LOAD LEDGER
+=========================================*/
+
+async function loadLedger(){
+
+    try{
+
+        const response =
+        await fetch("/cashbooklist");
+
+        const result =
+        await response.json();
+
+        ledger = result;
+
+        refreshTable();
+
+        updateLastEntry();
+
+        calculateOpening();
+
+        updateTodaySummary();
+
+        highlightLastRow();
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to load cash book.");
+
+    }
+
+}
+
+/*=========================================
+        LAST ENTRY
+=========================================*/
+
+function updateLastEntry(){
+
+    if(ledger.length==0){
+
+        document
+        .getElementById("lblLastEntry")
+        .innerHTML="-";
+
+        return;
+
+    }
+
+    const last =
+    ledger[ledger.length-1];
+
+    document
+    .getElementById("lblLastEntry")
+    .innerHTML=
+    last.entry_date;
+
+}
+
+/*=========================================
+        OPENING
+=========================================*/
+
+function calculateOpening(){
+
+    if(ledger.length==0){
+
+        openingBalance=0;
+
+    }
+    else{
+
+        openingBalance=
+        Number(
+        ledger[
+        ledger.length-1
+        ].closing);
+
+    }
+
+    calculateClosing();
+
+    updateSummary();
+
+}
+
+/*=========================================
+        TYPE CHANGED
+=========================================*/
+
+function typeChanged(){
+
+    const type =
+    document.getElementById("cmbType").value;
+
+    document
+    .getElementById("lblAmount")
+    .innerHTML = type;
+
+    calculateClosing();
+
+}
+
+
+/*=========================================
+        AMOUNT
+=========================================*/
+
+function amountChanged(){
+
+    let txt =
+    document.getElementById("txtAmount");
+
+    txt.value =
+    txt.value.replace(/[^0-9.]/g,"");
+
+    calculateClosing();
+
+}
+
+
+/*=========================================
+        DATE CHANGE
+=========================================*/
+
+/*=========================================
+        DATE VALIDATION
+=========================================*/
+
+function dateChanged(){
+
+    if(ledger.length==0)
+        return;
+
+    const lastDate =
+    ledger[
+    ledger.length-1
+    ].entry_date;
+
+    const newDate =
+    document
+    .getElementById("txtDate")
+    .value;
+
+    if(newDate < lastDate){
+
+        alert(
+        "Date should be " +
+        lastDate +
+        " or later."
+        );
+
+        document
+        .getElementById("txtDate")
+        .value=
+        lastDate;
+
+        return;
+
+    }
+
+}
+
+
+/*=========================================
+        CLOSING
+=========================================*/
+
+function calculateClosing(){
+
+    let amount =
+    document.getElementById("txtAmount").value;
+
+    amount = Number(amount);
+
+    if(isNaN(amount))
+        amount = 0;
+
+    const type =
+    document.getElementById("cmbType").value;
+
+    if(type=="Receipt"){
+
+        closingBalance =
+        openingBalance + amount;
+
+    }
+    else{
+
+        closingBalance =
+        openingBalance - amount;
+
+    }
+
+    document
+    .getElementById("txtOpening")
+    .value =
+    formatAmount(openingBalance);
+
+    document
+    .getElementById("txtClosing")
+    .value =
+    formatAmount(closingBalance);
+
+}
+
+
+/*=========================================
+        FORMAT
+=========================================*/
+
+function formatAmount(value){
+
+    value = Number(value);
+
+    if(isNaN(value))
+        value = 0;
+
+    return value.toFixed(2);
+
+}
+
+
+/*=========================================
+        CLEAR ENTRY
+=========================================*/
+
+/*=========================================
+        CLEAR ENTRY
+=========================================*/
+
+/*=========================================
+        CLEAR
+=========================================*/
+
+function clearEntry(){
+
+    document
+    .getElementById("cmbType")
+    .value="Receipt";
+
+    document
+    .getElementById("lblAmount")
+    .innerHTML="Receipt";
+
+    document
+    .getElementById("txtAmount")
+    .value="";
+
+    document
+    .getElementById("txtRemarks")
+    .value="";
+
+    calculateOpening();
+
+}
+
+/*=========================================
+        FOCUS AMOUNT
+=========================================*/
+
+function focusAmount(){
+
+    const txt =
+    document.getElementById("txtAmount");
+
+    txt.focus();
+
+    txt.select();
+
+}
+/*=========================================
+        SUMMARY
+=========================================*/
+
+function updateSummary(){
+
+    document
+    .getElementById("lblCurrentBalance")
+    .innerHTML =
+    formatAmount(closingBalance);
+
+}
+
+/*=========================================
+        TODAY SUMMARY
+=========================================*/
+
+function updateTodaySummary(){
+
+    let balance = 0;
+
+    if(ledger.length>0){
+
+        balance =
+        Number(
+        ledger[
+        ledger.length-1
+        ].closing
+        );
+
+    }
+
+    document
+    .getElementById("lblCurrentBalance")
+    .innerHTML =
+    formatAmount(balance);
+
+}
+
+
+/*=========================================
+        POPUP
+=========================================*/
+
+function openPopup(){
+
+    document
+    .getElementById("editPopup")
+    .style.display="flex";
+
+}
+
+function closePopup(){
+
+    document
+    .getElementById("editPopup")
+    .style.display="none";
+
+}
+
+
+/*=========================================
+        TABLE
+=========================================*/
+
+function refreshTable(){
+
+    const tbody =
+    document.getElementById("tbodyLedger");
+
+    tbody.innerHTML="";
+
+    if(ledger.length==0){
+
+        tbody.innerHTML=
+        "<tr><td colspan='6' class='center'>No Entries</td></tr>";
+
+        return;
+
+    }
+
+    ledger.forEach(function(item,index){
+
+        const tr =
+        document.createElement("tr");
+
+        tr.innerHTML = `
+
+            <td>${item.entry_date}</td>
+
+            <td class="balance">
+
+                ${formatAmount(item.opening)}
+
+            </td>
+
+            <td class="balance">
+
+                ${
+                    item.type=="Payment"
+                    ? formatAmount(item.amount)
+                    : "-"
+                }
+
+            </td>
+
+            <td class="balance">
+
+                ${
+                    item.type=="Receipt"
+                    ? formatAmount(item.amount)
+                    : "-"
+                }
+
+            </td>
+
+            <td class="balance">
+
+                ${formatAmount(item.closing)}
+
+            </td>
+
+            <td>
+
+                ${item.remarks}
+
+            </td>
+
+        `;
+
+        if(index==ledger.length-1){
+
+            tr.ondblclick=function(){
+
+                editLastRow();
+
+            };
+
+        }
+
+        tbody.appendChild(tr);
+
+    });
+
+}
+
+/*=========================================
+        LAST ROW
+=========================================*/
+
+function highlightLastRow(){
+
+    const rows =
+    document.querySelectorAll(
+    "#tbodyLedger tr"
+    );
+
+    rows.forEach(function(r){
+
+        r.classList.remove("lastRow");
+
+    });
+
+    if(rows.length==0)
+        return;
+
+    rows[
+    rows.length-1
+    ].classList.add("lastRow");
+
+}
+
+
+/*=========================================
+        LAST ROW
+=========================================*/
+
+/*=========================================
+        EDIT LAST ROW
+=========================================*/
+
+function editLastRow(){
+
+    if(ledger.length==0)
+        return;
+
+    const item =
+    ledger[
+    ledger.length-1
+    ];
+
+    loadEditPopup(item);
+
+}
+
+
+/*=========================================
+        KEYBOARD
+=========================================*/
+
+document.addEventListener(
+"keydown",
+function(e){
+
+    if(e.ctrlKey &&
+       e.key.toLowerCase()=="s"){
+
+        e.preventDefault();
+
+        document
+        .getElementById("btnSave")
+        .click();
+
+    }
+
+});
+
+
+/*=========================================
+        ENTER NEXT CONTROL
+=========================================*/
+
+document.addEventListener(
+"keypress",
+function(e){
+
+    if(e.key!="Enter")
+        return;
+
+    const list = Array.from(
+        document.querySelectorAll(
+        "input,select,textarea,button")
+    );
+
+    const index =
+    list.indexOf(document.activeElement);
+
+    if(index==-1)
+        return;
+
+    e.preventDefault();
+
+    if(index<list.length-1){
+
+        list[index+1].focus();
+
+    }
+
+});
+
+/*=========================================
+        SAVE ENTRY
+        PART 2B-2.1
+=========================================*/
+
+async function saveEntry(){
+
+    const entryDate =
+    document.getElementById("txtDate")
+    .value;
+
+    const type =
+    document.getElementById("cmbType")
+    .value;
+
+    const remarks =
+    document.getElementById("txtRemarks")
+    .value
+    .trim();
+
+    let amount =
+    document.getElementById("txtAmount")
+    .value
+    .trim();
+
+
+    /*-------------------------------
+        VALIDATE DATE
+    -------------------------------*/
+
+    if(entryDate==""){
+
+        alert("Please select date.");
+
+        document
+        .getElementById("txtDate")
+        .focus();
+
+        return;
+
+    }
+
+
+    /*-------------------------------
+        VALIDATE AMOUNT
+    -------------------------------*/
+
+    if(amount==""){
+
+        alert("Please enter amount.");
+
+        document
+        .getElementById("txtAmount")
+        .focus();
+
+        return;
+
+    }
+
+    amount = Number(amount);
+
+    if(isNaN(amount)){
+
+        alert("Invalid amount.");
+
+        document
+        .getElementById("txtAmount")
+        .focus();
+
+        return;
+
+    }
+
+    if(amount<=0){
+
+        alert("Amount should be greater than zero.");
+
+        document
+        .getElementById("txtAmount")
+        .focus();
+
+        return;
+
+    }
+
+
+    /*-------------------------------
+        BUILD OBJECT
+    -------------------------------*/
+
+    const data={
+
+        entry_date : entryDate,
+
+        opening : openingBalance,
+
+        amount : amount,
+
+        type : type,
+
+        closing : closingBalance,
+
+        remarks : remarks
+
+    };
+
+
+    console.log(data);
+
+
+    /*-------------------------------
+        NEXT PART
+    -------------------------------*/
+
+    saveEntryToServer(data);
+
+}
+
+/*=========================================
+        SAVE TO SERVER
+=========================================*/
+
+/*=========================================
+        SAVE TO SERVER
+        PART 2B-2.2
+=========================================*/
+
+/*=========================================
+        SAVE TO SERVER
+        PART 2B-2.3
+=========================================*/
+
+async function saveEntryToServer(data){
+
+    const btn =
+    document.getElementById("btnSave");
+
+    btn.disabled = true;
+
+    btn.innerHTML = "Saving...";
+
+    try{
+
+        const response =
+        await fetch("/savecashbook",{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify(data)
+
+        });
+
+        const result =
+        await response.json();
+
+        if(result.success){
+
+            await loadLedger();
+
+            clearEntry();
+
+            updateSummary();
+
+            focusAmount();
+
+        }
+        else{
+
+            alert(result.message);
+
+        }
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to save.");
+
+    }
+
+    btn.disabled = false;
+
+    btn.innerHTML = "SAVE";
+
+}
+
+/*=========================================
+        LOAD EDIT POPUP
+=========================================*/
+
+/*=========================================
+        LOAD EDIT POPUP
+=========================================*/
+
+function loadEditPopup(item){
+
+    editId = item._id;
+
+    document
+    .getElementById("editDate")
+    .value =
+    item.entry_date;
+
+    document
+    .getElementById("editOpening")
+    .value =
+    formatAmount(item.opening);
+
+    document
+    .getElementById("editType")
+    .value =
+    item.type;
+
+    if(item.type=="Receipt"){
+
+        document
+        .getElementById("editAmountLabel")
+        .innerHTML="Receipt";
+
+    }
+    else{
+
+        document
+        .getElementById("editAmountLabel")
+        .innerHTML="Payment";
+
+    }
+
+    document
+    .getElementById("editAmount")
+    .value =
+    item.amount;
+
+    document
+    .getElementById("editRemarks")
+    .value =
+    item.remarks;
+
+    calculateEditClosing();
+
+    openPopup();
+
+}

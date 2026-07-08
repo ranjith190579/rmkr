@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Cash Book</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#f5f5f5;
+}
+
+.header{
+    position:sticky;
+    top:0;
+    background:#fff;
+    padding:15px;
+    border-bottom:1px solid #ddd;
+    box-shadow:0 2px 5px rgba(0,0,0,.08);
+    z-index:100;
+}
+
+.header h2{
+    color:#1976d2;
+    margin-bottom:15px;
+}
+
+.formRow{
+    display:flex;
+    align-items:center;
+    margin-bottom:10px;
+    gap:10px;
+}
+
+.formRow label{
+    width:100px;
+    font-weight:bold;
+}
+
+.formRow input,
+.formRow select,
+.formRow textarea{
+
+    flex:1;
+    padding:10px;
+    border:1px solid #bbb;
+    border-radius:6px;
+    font-size:15px;
+}
+
+.formRow textarea{
+    resize:none;
+    height:55px;
+}
+
+.readonly{
+    background:#ececec;
+}
+
+.summary{
+
+    margin-top:10px;
+
+    padding:10px;
+
+    background:#eef7ff;
+
+    border:1px solid #cfe5ff;
+
+    border-radius:6px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    flex-wrap:wrap;
+
+    font-weight:bold;
+}
+
+#btnSave{
+
+    width:100%;
+
+    margin-top:15px;
+
+    padding:12px;
+
+    background:#2e7d32;
+
+    color:white;
+
+    border:none;
+
+    border-radius:6px;
+
+    font-size:17px;
+
+    cursor:pointer;
+}
+
+#btnSave:hover{
+
+    background:#1b5e20;
+}
+
+.tableArea{
+
+    padding:15px;
+
+}
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+}
+
+thead{
+
+    position:sticky;
+
+    top:340px;
+
+    background:#1976d2;
+
+    color:white;
+}
+
+th{
+
+    padding:10px;
+
+    border:1px solid #ddd;
+
+    font-size:14px;
+}
+
+td{
+
+    padding:8px;
+
+    border:1px solid #ddd;
+
+    font-size:14px;
+}
+
+tbody tr:hover{
+
+    background:#fff8dc;
+
+    cursor:pointer;
+}
+
+.lastRow{
+
+    background:#fff3cd;
+}
+
+.balance{
+
+    text-align:right;
+}
+
+.center{
+
+    text-align:center;
+}
+
+.popup{
+
+    display:none;
+
+    position:fixed;
+
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+
+    background:rgba(0,0,0,.45);
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+}
+
+.popupContent{
+
+    background:white;
+
+    width:500px;
+
+    max-width:95%;
+
+    border-radius:8px;
+
+    overflow:hidden;
+}
+
+.popupHeader{
+
+    background:#1976d2;
+
+    color:white;
+
+    padding:12px;
+
+    font-size:18px;
+}
+
+.popupBody{
+
+    padding:15px;
+}
+
+.popupFooter{
+
+    padding:15px;
+
+    display:flex;
+
+    gap:10px;
+}
+
+.popupFooter button{
+
+    flex:1;
+
+    padding:10px;
+
+    border:none;
+
+    color:white;
+
+    border-radius:6px;
+
+    cursor:pointer;
+}
+
+#btnUpdate{
+
+    background:#1976d2;
+}
+
+#btnDelete{
+
+    background:#d32f2f;
+}
+
+#btnCancel{
+
+    background:#666;
+}
+
+@media(max-width:700px){
+
+.formRow{
+
+    flex-direction:column;
+
+    align-items:stretch;
+}
+
+.formRow label{
+
+    width:auto;
+}
+
+table{
+
+    font-size:12px;
+}
+
+th,td{
+
+    padding:6px;
+}
+
+.summary{
+
+    flex-direction:column;
+
+    gap:8px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h2>Daily Cash Book</h2>
+
+<div class="formRow">
+<label>Date</label>
+<input type="date" id="txtDate">
+</div>
+
+<div class="formRow">
+<label>Opening</label>
+<input type="text" id="txtOpening" class="readonly" readonly>
+</div>
+
+<div class="formRow">
+<label>Type</label>
+
+<select id="cmbType">
+
+<option value="Receipt">Receipt</option>
+
+<option value="Payment">Payment</option>
+
+</select>
+
+</div>
+
+<div class="formRow">
+
+<label id="lblAmount">
+
+Receipt
+
+</label>
+
+<input
+type="text"
+id="txtAmount"
+inputmode="decimal">
+
+</div>
+
+<div class="formRow">
+
+<label>Closing</label>
+
+<input
+type="text"
+id="txtClosing"
+class="readonly"
+readonly>
+
+</div>
+
+<div class="formRow">
+
+<label>Remarks</label>
+
+<textarea id="txtRemarks"></textarea>
+
+</div>
+
+<button id="btnSave">
+
+SAVE
+
+</button>
+
+<div class="summary">
+
+<div>
+
+Current Balance :
+<b id="lblCurrentBalance">
+0.00
+</b>
+
+</div>
+
+<div>
+
+Last Entry :
+<b id="lblLastEntry">
+
+-
+
+</b>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="tableArea">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+
+<th>Opening</th>
+
+<th>Payment</th>
+
+<th>Receipt</th>
+
+<th>Closing</th>
+
+<th>Remarks</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tbodyLedger">
+
+<tr>
+
+<td colspan="6" class="center">
+
+No Entries
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<div
+class="popup"
+id="editPopup">
+
+<div
+class="popupContent">
+
+<div
+class="popupHeader">
+
+Edit Cash Entry
+
+</div>
+
+<div
+class="popupBody">
+
+<div class="formRow">
+
+<label>Date</label>
+
+<input
+type="date"
+id="editDate">
+
+</div>
+
+<div class="formRow">
+
+<label>Opening</label>
+
+<input
+type="text"
+id="editOpening"
+readonly
+class="readonly">
+
+</div>
+
+<div class="formRow">
+
+<label>Type</label>
+
+<select id="editType">
+
+<option>
+
+Receipt
+
+</option>
+
+<option>
+
+Payment
+
+</option>
+
+</select>
+
+</div>
+
+<div class="formRow">
+
+<label id="editAmountLabel">
+
+Receipt
+
+</label>
+
+<input
+type="text"
+id="editAmount">
+
+</div>
+
+<div class="formRow">
+
+<label>Closing</label>
+
+<input
+type="text"
+id="editClosing"
+readonly
+class="readonly">
+
+</div>
+
+<div class="formRow">
+
+<label>Remarks</label>
+
+<textarea id="editRemarks"></textarea>
+
+</div>
+
+</div>
+
+<div
+class="popupFooter">
+
+<button id="btnUpdate">
+
+UPDATE
+
+</button>
+
+<button id="btnDelete">
+
+DELETE
+
+</button>
+
+<button id="btnCancel">
+
+CANCEL
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="cashbook.js"></script>
+
+</body>
+</html>
