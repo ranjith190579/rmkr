@@ -154,18 +154,158 @@ function registerEvents(){
         DELETE ENTRY
 =========================================*/
 
+/*=========================================
+        DELETE ENTRY
+=========================================*/
+
 async function deleteEntry(){
 
-    // Part 2D
+    if(!confirm("Delete this entry ?"))
+        return;
+
+    deleteEntryFromServer();
+
+}
+/*=========================================
+        DELETE SERVER
+=========================================*/
+
+async function deleteEntryFromServer(){
+
+    try{
+
+        const response =
+        await fetch(
+
+            "/deletecashbook/"+editId,
+
+            {
+
+                method:"DELETE"
+
+            }
+
+        );
+
+        const result =
+        await response.json();
+
+        if(result.success){
+
+            closePopup();
+
+            await loadLedger();
+
+            focusAmount();
+
+        }
+        else{
+
+            alert(result.message);
+
+        }
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to delete.");
+
+    }
 
 }
 /*=========================================
         UPDATE ENTRY
 =========================================*/
 
+/*=========================================
+        UPDATE ENTRY
+=========================================*/
+
 async function updateEntry(){
 
-    // Part 2C-5
+    const data={
+
+        _id : editId,
+
+        amount : Number(
+            document.getElementById("editAmount").value
+        ),
+
+        type :
+        document.getElementById("editType").value,
+
+        remarks :
+        document.getElementById("editRemarks").value.trim()
+
+    };
+
+    if(data.amount<=0){
+
+        alert("Invalid Amount.");
+
+        document
+        .getElementById("editAmount")
+        .focus();
+
+        return;
+
+    }
+
+    updateEntryToServer(data);
+
+}
+
+/*=========================================
+        UPDATE SERVER
+=========================================*/
+
+async function updateEntryToServer(data){
+
+    try{
+
+        const response =
+        await fetch("/updatecashbook",{
+
+            method:"PUT",
+
+            headers:{
+
+                "Content-Type":"application/json"
+
+            },
+
+            body:JSON.stringify(data)
+
+        });
+
+        const result =
+        await response.json();
+
+        if(result.success){
+
+            closePopup();
+
+            await loadLedger();
+
+            focusAmount();
+
+        }
+        else{
+
+            alert(result.message);
+
+        }
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to update.");
+
+    }
 
 }
 /*=========================================
@@ -569,6 +709,14 @@ function openPopup(){
     .getElementById("editPopup")
     .style.display="flex";
 
+    document
+    .getElementById("editAmount")
+    .focus();
+
+    document
+    .getElementById("editAmount")
+    .select();    
+
 }
 
 function closePopup(){
@@ -863,13 +1011,9 @@ async function saveEntry(){
 
         entry_date : entryDate,
 
-        opening : openingBalance,
-
         amount : amount,
 
         type : type,
-
-        closing : closingBalance,
 
         remarks : remarks
 
