@@ -11,6 +11,7 @@ let ledger = [];
 let editMode = false;
 let editId = null;
 
+let isSaving = false;
 /*=========================================
         API URL
 =========================================*/
@@ -28,6 +29,10 @@ window.onload = function(){
     setToday();
 
     registerEvents();
+
+    document
+    .getElementById("cmbType")
+    .value = "Payment";
 
     loadLedger();
 
@@ -439,8 +444,10 @@ function updateLastEntry(){
 
     }
 
+    //const last =
+    //ledger[ledger.length-1];
     const last =
-    ledger[ledger.length-1];
+    ledger[0];
 
     document
     .getElementById("lblLastEntry")
@@ -461,13 +468,16 @@ function calculateOpening(){
 
     }
     else{
-
+/*
         openingBalance=
         Number(
         ledger[
         ledger.length-1
         ].closing);
-
+*/
+        openingBalance = ledger.length > 0
+            ? Number(ledger[0].closing)
+            : 0;
     }
 
     calculateClosing();
@@ -611,7 +621,23 @@ function formatAmount(value){
     return value.toFixed(2);
 
 }
+function formatDate(value){
 
+    const d =
+    new Date(value);
+
+    const day =
+    String(d.getDate()).padStart(2,"0");
+
+    const month =
+    String(d.getMonth()+1).padStart(2,"0");
+
+    const year =
+    d.getFullYear();
+
+    return day + "-" + month + "-" + year;
+
+}
 
 /*=========================================
         CLEAR ENTRY
@@ -629,11 +655,11 @@ function clearEntry(){
 
     document
     .getElementById("cmbType")
-    .value="Receipt";
+    .value="Payment";
 
     document
     .getElementById("lblAmount")
-    .innerHTML="Receipt";
+    .innerHTML="Amount :";
 
     document
     .getElementById("txtAmount")
@@ -682,20 +708,14 @@ function updateTodaySummary(){
 
     let balance = 0;
 
-    if(ledger.length>0){
+    if(ledger.length > 0){
 
-        balance =
-        Number(
-        ledger[
-        ledger.length-1
-        ].closing
-        );
+        balance = Number(ledger[0].closing);
 
     }
 
     document
-    .getElementById("lblCurrentBalance")
-    .innerHTML =
+    .getElementById("lblCurrentBalance").innerHTML =
     formatAmount(balance);
 
 }
@@ -744,7 +764,7 @@ function refreshTable(){
     if(ledger.length==0){
 
         tbody.innerHTML=
-        "<tr><td colspan='6' class='center'>No Entries</td></tr>";
+        "<tr><td colspan='5' class='center'>No Entries</td></tr>";
 
         return;
 
@@ -757,49 +777,56 @@ function refreshTable(){
 
         tr.innerHTML = `
 
-            <td>${item.entry_date}</td>
 
-            <td class="balance">
+            <td>
 
-                ${formatAmount(item.opening)}
+            ${formatDate(item.entry_date)}
+
+            </td>
+            <td class="timeColumn">
+
+                ${item.entry_time || "-"}
 
             </td>
 
             <td class="balance">
 
-                ${
-                    item.type=="Payment"
-                    ? formatAmount(item.amount)
-                    : "-"
-                }
+            ${formatAmount(item.opening)}
 
             </td>
 
             <td class="balance">
 
-                ${
-                    item.type=="Receipt"
-                    ? formatAmount(item.amount)
-                    : "-"
-                }
+            ${item.type=="Payment"
+            ?formatAmount(item.amount)
+            :"-"}
 
             </td>
 
             <td class="balance">
 
-                ${formatAmount(item.closing)}
+            ${item.type=="Receipt"
+            ?formatAmount(item.amount)
+            :"-"}
+
+            </td>
+
+            <td class="balance">
+
+            ${formatAmount(item.closing)}
 
             </td>
 
             <td>
 
-                ${item.remarks}
+            ${item.remarks}
 
             </td>
 
-        `;
+            `;
 
-        if(index==ledger.length-1){
+        //if(index==ledger.length-1){
+        if(index==0){
 
             tr.ondblclick=function(){
 
@@ -835,9 +862,10 @@ function highlightLastRow(){
     if(rows.length==0)
         return;
 
-    rows[
-    rows.length-1
-    ].classList.add("lastRow");
+    //rows[
+    //rows.length-1
+    //].classList.add("lastRow");
+    rows[0].classList.add("lastRow");
 
 }
 
@@ -855,10 +883,12 @@ function editLastRow(){
     if(ledger.length==0)
         return;
 
+    //const item =
+    //ledger[
+    //ledger.length-1
+    //];
     const item =
-    ledger[
-    ledger.length-1
-    ];
+    ledger[0];
 
     loadEditPopup(item);
 
@@ -895,6 +925,13 @@ document.addEventListener(
 "keypress",
 function(e){
 
+    if(isSaving){
+
+        e.preventDefault();
+
+        return;
+
+    }
     if(e.key!="Enter")
         return;
 
@@ -926,110 +963,125 @@ function(e){
 
 async function saveEntry(){
 
-    const entryDate =
-    document.getElementById("txtDate")
-    .value;
-
-    const type =
-    document.getElementById("cmbType")
-    .value;
-
-    const remarks =
-    document.getElementById("txtRemarks")
-    .value
-    .trim();
-
-    let amount =
-    document.getElementById("txtAmount")
-    .value
-    .trim();
-
-
-    /*-------------------------------
-        VALIDATE DATE
-    -------------------------------*/
-
-    if(entryDate==""){
-
-        alert("Please select date.");
-
-        document
-        .getElementById("txtDate")
-        .focus();
-
+    if(isSaving)
         return;
 
+    isSaving = true;
+
+    try{
+
+        const entryDate =
+        document.getElementById("txtDate")
+        .value;
+
+        const type =
+        document.getElementById("cmbType")
+        .value;
+
+        const remarks =
+        document.getElementById("txtRemarks")
+        .value
+        .trim();
+
+        let amount =
+        document.getElementById("txtAmount")
+        .value
+        .trim();
+
+
+        /*-------------------------------
+            VALIDATE DATE
+        -------------------------------*/
+
+        if(entryDate==""){
+
+            alert("Please select date.");
+
+            document
+            .getElementById("txtDate")
+            .focus();
+
+            return;
+
+        }
+
+
+        /*-------------------------------
+            VALIDATE AMOUNT
+        -------------------------------*/
+
+        if(amount==""){
+
+            alert("Please enter amount.");
+
+            document
+            .getElementById("txtAmount")
+            .focus();
+
+            return;
+
+        }
+
+        amount = Number(amount);
+
+        if(isNaN(amount)){
+
+            alert("Invalid amount.");
+
+            document
+            .getElementById("txtAmount")
+            .focus();
+
+            return;
+
+        }
+
+        if(amount<=0){
+
+            alert("Amount should be greater than zero.");
+
+            document
+            .getElementById("txtAmount")
+            .focus();
+
+            return;
+
+        }
+
+
+        /*-------------------------------
+            BUILD OBJECT
+        -------------------------------*/
+
+        const data={
+
+            entry_date : entryDate,
+
+            amount : amount,
+
+            type : type,
+
+            remarks : remarks
+
+        };
+
+
+        console.log(data);
+
+
+        /*-------------------------------
+            NEXT PART
+        -------------------------------*/
+
+        await saveEntryToServer(data);
+
+
+        }
+    finally{
+
+        isSaving = false;
+
     }
-
-
-    /*-------------------------------
-        VALIDATE AMOUNT
-    -------------------------------*/
-
-    if(amount==""){
-
-        alert("Please enter amount.");
-
-        document
-        .getElementById("txtAmount")
-        .focus();
-
-        return;
-
-    }
-
-    amount = Number(amount);
-
-    if(isNaN(amount)){
-
-        alert("Invalid amount.");
-
-        document
-        .getElementById("txtAmount")
-        .focus();
-
-        return;
-
-    }
-
-    if(amount<=0){
-
-        alert("Amount should be greater than zero.");
-
-        document
-        .getElementById("txtAmount")
-        .focus();
-
-        return;
-
-    }
-
-
-    /*-------------------------------
-        BUILD OBJECT
-    -------------------------------*/
-
-    const data={
-
-        entry_date : entryDate,
-
-        amount : amount,
-
-        type : type,
-
-        remarks : remarks
-
-    };
-
-
-    console.log(data);
-
-
-    /*-------------------------------
-        NEXT PART
-    -------------------------------*/
-
-    saveEntryToServer(data);
 
 }
 
