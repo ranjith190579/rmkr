@@ -33,32 +33,107 @@ body{
     margin-bottom:15px;
 }
 
-.formRow{
+.entryRow{
+
     display:flex;
+
     align-items:center;
+
+    gap:8px;
+
     margin-bottom:10px;
-    gap:10px;
+
+    flex-wrap:wrap;
+
 }
 
-.formRow label{
-    width:100px;
+.entryRow label{
+
     font-weight:bold;
+
+    white-space:nowrap;
+
 }
 
-.formRow input,
-.formRow select,
-.formRow textarea{
+.entryRow input,
+.entryRow select{
+
+    height:34px;
+
+    padding:5px 8px;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
+}
+
+
+#txtDate{
+
+    width:150px;
+
+}
+
+#txtOpening{
+
+    width:130px;
+
+    text-align:right;
+
+}
+
+#cmbType{
+
+    width:130px;
+
+}
+
+#txtAmount{
+
+    width:130px;
+
+    text-align:right;
+
+}
+
+#txtClosing{
+
+    width:130px;
+
+    text-align:right;
+
+}
+
+
+.remarksRow{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+}
+
+.remarksRow label{
+
+    font-weight:bold;
+
+}
+
+#txtRemarks{
 
     flex:1;
-    padding:10px;
-    border:1px solid #bbb;
-    border-radius:6px;
-    font-size:15px;
-}
 
-.formRow textarea{
-    resize:none;
-    height:55px;
+    height:34px;
+
+    padding:5px 8px;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
 }
 
 .readonly{
@@ -88,11 +163,11 @@ body{
 
 #btnSave{
 
-    width:100%;
+    width:120px;
 
-    margin-top:15px;
+    height:36px;
 
-    padding:12px;
+    margin:0;
 
     background:#2e7d32;
 
@@ -100,11 +175,12 @@ body{
 
     border:none;
 
-    border-radius:6px;
-
-    font-size:17px;
+    border-radius:5px;
 
     cursor:pointer;
+
+    font-weight:bold;
+
 }
 
 #btnSave:hover{
@@ -114,28 +190,35 @@ body{
 
 .tableArea{
 
-    padding:15px;
+    max-height:calc(100vh - 260px);
+
+    overflow-y:auto;
+
+    background:#fff;
+
+    border:1px solid #ddd;
 
 }
-
 table{
 
     width:100%;
 
     border-collapse:collapse;
 
-    background:white;
 }
 
 thead{
 
     position:sticky;
 
-    top:340px;
+    top:0;
+
+    z-index:10;
 
     background:#1976d2;
 
-    color:white;
+    color:#fff;
+
 }
 
 th{
@@ -268,34 +351,63 @@ tbody tr:hover{
 
 @media(max-width:700px){
 
+.entryRow{
+
+    flex-wrap:wrap;
+
+}
+
+.remarksRow{
+
+    flex-wrap:wrap;
+
+}
+
+#txtRemarks{
+
+    width:100%;
+
+}
+
+#btnSave{
+
+    width:100%;
+
+}
+
+}
+
 .formRow{
 
-    flex-direction:column;
+    display:flex;
 
-    align-items:stretch;
+    align-items:center;
+
+    margin-bottom:10px;
+
+    gap:10px;
+
 }
 
 .formRow label{
 
-    width:auto;
+    width:90px;
+
+    font-weight:bold;
+
 }
 
-table{
+.formRow input,
+.formRow select,
+.formRow textarea{
 
-    font-size:12px;
-}
+    flex:1;
 
-th,td{
+    padding:8px;
 
-    padding:6px;
-}
+    border:1px solid #bbb;
 
-.summary{
-
-    flex-direction:column;
-
-    gap:8px;
-}
+    border-radius:5px;
 
 }
 
@@ -309,69 +421,94 @@ th,td{
 
 <h2>Daily Cash Book</h2>
 
-<div class="formRow">
-<label>Date</label>
-<input type="date" id="txtDate">
-</div>
+<!-- ===================== -->
+<!-- Row 1 -->
+<!-- ===================== -->
 
-<div class="formRow">
-<label>Opening</label>
-<input type="text" id="txtOpening" class="readonly" readonly>
-</div>
+<div class="entryRow">
 
-<div class="formRow">
-<label>Type</label>
+    <label>Date :</label>
 
-<select id="cmbType">
+    <input
+        type="date"
+        id="txtDate">
 
-<option value="Receipt">Receipt</option>
+    <label>Opening :</label>
 
-<option value="Payment">Payment</option>
+    <input
+        type="text"
+        id="txtOpening"
+        class="readonly"
+        readonly>
 
-</select>
+    <label>Type :</label>
 
-</div>
+    <select id="cmbType">
 
-<div class="formRow">
+        <option value="Receipt">
+            Receipt
+        </option>
 
-<label id="lblAmount">
+        <option value="Payment">
+            Payment
+        </option>
 
-Receipt
-
-</label>
-
-<input
-type="text"
-id="txtAmount"
-inputmode="decimal">
+    </select>
 
 </div>
 
-<div class="formRow">
 
-<label>Closing</label>
+<!-- ===================== -->
+<!-- Row 2 -->
+<!-- ===================== -->
 
-<input
-type="text"
-id="txtClosing"
-class="readonly"
-readonly>
+<div class="entryRow">
+
+    <label id="lblAmount">
+
+        Amount :
+
+    </label>
+
+    <input
+        type="text"
+        id="txtAmount"
+        inputmode="decimal">
+
+    <label>Closing :</label>
+
+    <input
+        type="text"
+        id="txtClosing"
+        class="readonly"
+        readonly>
 
 </div>
 
-<div class="formRow">
 
-<label>Remarks</label>
+<!-- ===================== -->
+<!-- Row 3 -->
+<!-- ===================== -->
 
-<textarea id="txtRemarks"></textarea>
+<div class="remarksRow">
+
+    <label>
+
+        Remarks :
+
+    </label>
+
+    <input
+        type="text"
+        id="txtRemarks">
+
+    <button id="btnSave">
+
+        SAVE
+
+    </button>
 
 </div>
-
-<button id="btnSave">
-
-SAVE
-
-</button>
 
 <div class="summary">
 

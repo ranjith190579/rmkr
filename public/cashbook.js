@@ -399,6 +399,8 @@ async function loadLedger(){
         await response.json();
 
         ledger = result;
+        console.log("Ledger Data:", ledger);
+console.log("Rows:", ledger.length);
 
         refreshTable();
 
@@ -806,7 +808,7 @@ function refreshTable(){
             };
 
         }
-
+console.log("Adding Row:", item);
         tbody.appendChild(tr);
 
     });
