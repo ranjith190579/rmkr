@@ -38,6 +38,9 @@ client.db(process.env.MONGO_DB_SARAVANAN);
 const cashbook =
 dbSaravanan.collection("daily_cashbook");
 
+const velavan_cust_mas =
+dbSaravanan.collection("velavan_cust_mas");
+
 console.log("Mongo Connected");
 
 app.listen(3000, () => {
@@ -793,17 +796,9 @@ async function saveCashBook(data, res){
 
 function getCurrentTime(){
 
-    const d = new Date();
-
-    let hh = d.getHours();
-
-    let mm = d.getMinutes();
-
-    hh = String(hh).padStart(2,"0");
-
-    mm = String(mm).padStart(2,"0");
-
-    return hh + ":" + mm;
+    return new Date().toLocaleTimeString("en-GB", {
+        hour12: false
+    });
 
 }
 
@@ -872,7 +867,9 @@ app.get("/cashbooklist", async (req, res) => {
         })
         .sort({
 
-            created_at: 1
+            //created_at: 1
+            entry_date: -1,
+            created_at: -1            
 
         })
         .toArray();
@@ -1177,6 +1174,546 @@ async function deleteCashBook(id, res){
             });
 
         }
+
+        res.json({
+
+            success:true
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+}
+
+/*=========================================
+        VELAVAN CUSTOMER LIST
+=========================================*/
+
+app.get("/velavan_cust_list", async (req, res) => {
+
+    try {
+
+        const rows =
+        await velavan_cust_mas
+        .find({})
+        .sort({
+
+            created_at : -1
+
+        })
+        .toArray();
+
+        res.json(rows);
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json([]);
+
+    }
+
+});
+/*=========================================
+        SAVE VELAVAN CUSTOMER
+=========================================*/
+
+app.post("/saveVelavanCustomer", async (req, res) => {
+
+    try{
+
+        const data = req.body;
+
+        /*-------------------------
+            VALIDATION
+        -------------------------*/
+
+        if(!data.name){
+
+            return res.json({
+
+                success:false,
+
+                message:"Name Required."
+
+            });
+
+        }
+
+
+        if(!data.name_in_tam){
+
+            return res.json({
+
+                success:false,
+
+                message:"Tamil Name Required."
+
+            });
+
+        }
+
+
+        if(!data.mob_no){
+
+            return res.json({
+
+                success:false,
+
+                message:"Mobile Number Required."
+
+            });
+
+        }
+
+
+        if(data.mob_no.length != 10){
+
+            return res.json({
+
+                success:false,
+
+                message:"Mobile Number should be 10 digits."
+
+            });
+
+        }
+
+
+        /*-------------------------
+            NEXT PART
+        -------------------------*/
+
+        saveVelavanCustomer(data,res);
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+});
+/*=========================================
+        SAVE VELAVAN CUSTOMER
+=========================================*/
+
+async function saveVelavanCustomer(data,res){
+
+    try{
+
+        /*-------------------------
+            NAME EXISTS ?
+        -------------------------*/
+
+        const nameExists =
+        await velavan_cust_mas.findOne({
+
+            name : data.name
+
+        });
+
+        if(nameExists){
+
+            return res.json({
+
+                success:false,
+
+                message:"Name already exists."
+
+            });
+
+        }
+
+
+        /*-------------------------
+            TAMIL NAME EXISTS ?
+        -------------------------*/
+
+        const tamilExists =
+        await velavan_cust_mas.findOne({
+
+            name_in_tam : data.name_in_tam
+
+        });
+
+        if(tamilExists){
+
+            return res.json({
+
+                success:false,
+
+                message:"Tamil Name already exists."
+
+            });
+
+        }
+
+
+        /*-------------------------
+            MOBILE EXISTS ?
+        -------------------------*/
+
+        const mobileExists =
+        await velavan_cust_mas.findOne({
+
+            mob_no : data.mob_no
+
+        });
+
+        if(mobileExists){
+
+            return res.json({
+
+                success:false,
+
+                message:"Mobile Number already exists."
+
+            });
+
+        }
+
+
+        /*-------------------------
+            BUILD DOCUMENT
+        -------------------------*/
+
+        const doc={
+
+            name : data.name.trim(),
+
+            name_in_tam :
+            data.name_in_tam.trim(),
+
+            mob_no :
+            data.mob_no.trim(),
+
+            created_at :
+            new Date()
+
+        };
+
+
+        /*-------------------------
+            INSERT
+        -------------------------*/
+
+        await velavan_cust_mas.insertOne(doc);
+
+
+        /*-------------------------
+            SUCCESS
+        -------------------------*/
+
+        res.json({
+
+            success:true
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+}
+/*=========================================
+        UPDATE VELAVAN CUSTOMER
+=========================================*/
+
+app.put("/updateVelavanCustomer", async (req, res) => {
+
+    try{
+
+        const data = req.body;
+
+        if(!data._id){
+
+            return res.json({
+
+                success:false,
+
+                message:"Invalid Customer."
+
+            });
+
+        }
+
+        if(!data.name){
+
+            return res.json({
+
+                success:false,
+
+                message:"Name Required."
+
+            });
+
+        }
+
+        if(!data.name_in_tam){
+
+            return res.json({
+
+                success:false,
+
+                message:"Tamil Name Required."
+
+            });
+
+        }
+
+        if(!data.mob_no){
+
+            return res.json({
+
+                success:false,
+
+                message:"Mobile Number Required."
+
+            });
+
+        }
+
+        if(data.mob_no.length!=10){
+
+            return res.json({
+
+                success:false,
+
+                message:"Mobile Number should be 10 digits."
+
+            });
+
+        }
+
+        updateVelavanCustomer(data,res);
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+});
+/*=========================================
+        UPDATE CUSTOMER
+=========================================*/
+
+async function updateVelavanCustomer(data,res){
+
+    try{
+
+        const duplicate =
+        await velavan_cust_mas.findOne({
+
+            _id:{
+                $ne:new ObjectId(data._id)
+            },
+
+            $or:[
+
+                {
+
+                    name:data.name.trim()
+
+                },
+
+                {
+
+                    name_in_tam:
+                    data.name_in_tam.trim()
+
+                },
+
+                {
+
+                    mob_no:
+                    data.mob_no.trim()
+
+                }
+
+            ]
+
+        });
+
+        if(duplicate){
+
+            if(duplicate.name==data.name.trim()){
+
+                return res.json({
+
+                    success:false,
+
+                    message:"Name already exists."
+
+                });
+
+            }
+
+            if(duplicate.name_in_tam==
+               data.name_in_tam.trim()){
+
+                return res.json({
+
+                    success:false,
+
+                    message:"Tamil Name already exists."
+
+                });
+
+            }
+
+            if(duplicate.mob_no==
+               data.mob_no.trim()){
+
+                return res.json({
+
+                    success:false,
+
+                    message:"Mobile Number already exists."
+
+                });
+
+            }
+
+        }
+
+        await velavan_cust_mas.updateOne(
+
+            {
+
+                _id:new ObjectId(data._id)
+
+            },
+
+            {
+
+                $set:{
+
+                    name:
+                    data.name.trim(),
+
+                    name_in_tam:
+                    data.name_in_tam.trim(),
+
+                    mob_no:
+                    data.mob_no.trim()
+
+                }
+
+            }
+
+        );
+
+        res.json({
+
+            success:true
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+}
+/*=========================================
+        DELETE VELAVAN CUSTOMER
+=========================================*/
+
+app.delete("/deleteVelavanCustomer/:id", async (req,res)=>{
+
+    try{
+
+        deleteVelavanCustomer(
+
+            req.params.id,
+
+            res
+
+        );
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false,
+
+            message:ex.message
+
+        });
+
+    }
+
+});
+/*=========================================
+        DELETE CUSTOMER
+=========================================*/
+
+async function deleteVelavanCustomer(id,res){
+
+    try{
+
+        await velavan_cust_mas.deleteOne({
+
+            _id:new ObjectId(id)
+
+        });
 
         res.json({
 
