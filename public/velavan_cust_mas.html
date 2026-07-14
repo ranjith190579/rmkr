@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>Customer Master</title>
+
+<style>
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+
+}
+
+body{
+
+    background:#f5f5f5;
+
+}
+
+.header{
+
+    position:sticky;
+
+    top:0;
+
+    background:#fff;
+
+    padding:15px;
+
+    border-bottom:1px solid #ddd;
+
+    box-shadow:0 2px 5px rgba(0,0,0,.08);
+
+    z-index:100;
+
+}
+
+.header h2{
+
+    color:#1976d2;
+
+    margin-bottom:15px;
+
+}
+
+.entryRow{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    margin-bottom:10px;
+
+    flex-wrap:wrap;
+
+}
+
+.entryRow label{
+
+    width:110px;
+
+    font-weight:bold;
+
+}
+
+.entryRow input{
+
+    flex:1;
+
+    height:34px;
+
+    padding:5px 8px;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
+    font-size:15px;
+
+}
+
+#txtMobNo{
+
+    max-width:180px;
+
+}
+
+#btnSave{
+
+    width:120px;
+
+    height:36px;
+
+    background:#2e7d32;
+
+    color:white;
+
+    border:none;
+
+    border-radius:5px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+#btnSave:hover{
+
+    background:#1b5e20;
+
+}
+.searchRow{
+
+    padding:10px 15px;
+
+    display:flex;
+
+    gap:10px;
+
+    align-items:center;
+
+}
+
+.searchRow label{
+
+    font-weight:bold;
+
+}
+
+.searchRow input{
+
+    flex:1;
+
+    padding:8px;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
+    font-size:15px;
+
+}
+.tableArea{
+
+    padding:15px;
+
+}
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+}
+
+thead{
+
+    position:sticky;
+
+    top:220px;
+
+    background:#1976d2;
+
+    color:white;
+
+}
+
+th{
+
+    padding:10px;
+
+    border:1px solid #ddd;
+
+    font-size:14px;
+
+}
+
+td{
+
+    padding:8px;
+
+    border:1px solid #ddd;
+
+    font-size:14px;
+
+}
+
+tbody tr:hover{
+
+    background:#fff8dc;
+
+    cursor:pointer;
+
+}
+
+.center{
+
+    text-align:center;
+
+}
+
+.popup{
+
+    display:none;
+
+    position:fixed;
+
+    left:0;
+
+    right:0;
+
+    top:0;
+
+    bottom:0;
+
+    background:rgba(0,0,0,.45);
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+
+}
+
+.popupContent{
+
+    background:white;
+
+    width:500px;
+
+    max-width:95%;
+
+    border-radius:8px;
+
+    overflow:hidden;
+
+}
+
+.popupHeader{
+
+    background:#1976d2;
+
+    color:white;
+
+    padding:12px;
+
+    font-size:18px;
+
+}
+
+.popupBody{
+
+    padding:15px;
+
+}
+
+.formRow{
+
+    display:flex;
+
+    align-items:center;
+
+    margin-bottom:10px;
+
+    gap:10px;
+
+}
+
+.formRow label{
+
+    width:120px;
+
+    font-weight:bold;
+
+}
+
+.formRow input{
+
+    flex:1;
+
+    padding:8px;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
+}
+
+.popupFooter{
+
+    padding:15px;
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.popupFooter button{
+
+    flex:1;
+
+    padding:10px;
+
+    border:none;
+
+    color:white;
+
+    border-radius:5px;
+
+    cursor:pointer;
+
+}
+
+#btnUpdate{
+
+    background:#1976d2;
+
+}
+
+#btnDelete{
+
+    background:#d32f2f;
+
+}
+
+#btnCancel{
+
+    background:#666;
+
+}
+
+@media(max-width:700px){
+
+.entryRow{
+
+    flex-direction:column;
+
+    align-items:stretch;
+
+}
+
+.entryRow label{
+
+    width:auto;
+
+}
+
+#txtMobNo{
+
+    max-width:100%;
+
+}
+
+table{
+
+    font-size:12px;
+
+}
+
+th,td{
+
+    padding:6px;
+
+}
+
+}
+.selectedRow{
+
+    background:#cde8ff !important;
+
+}
+
+
+/* Suggestion Dropdown */
+.suggestions-dropdown {
+    position: fixed;
+    z-index:99999;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 16px;
+    min-width: 150px;
+}
+
+.suggestions-dropdown.hidden {
+    display: none;
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+    background-color: #e8f0fe;
+    color: #1967d2;
+}
+
+.suggestion-number {
+    color: #888;
+    font-size: 12px;
+    margin-right: 8px;
+    align-self: center;
+}
+
+.hint {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h2>
+
+Customer Master
+
+</h2>
+
+<div class="entryRow">
+
+<label>
+
+Name
+
+</label>
+
+<input
+type="text"
+id="txtName">
+
+</div>
+
+<div class="entryRow">
+
+<label>
+
+Tamil Name
+
+</label>
+
+<input
+type="text"
+id="txtNameTam">
+
+</div>
+
+<div class="entryRow">
+
+<label>
+
+Mobile No
+
+</label>
+
+<input
+type="text"
+id="txtMobNo"
+maxlength="10"
+inputmode="numeric">
+
+<button
+id="btnSave">
+
+SAVE
+
+</button>
+
+</div>
+
+</div>
+<div class="searchRow">
+
+<label>
+
+Search
+
+</label>
+
+<input
+type="text"
+id="txtSearch"
+placeholder="Name / Tamil Name / Mobile">
+
+</div>
+<div class="tableArea">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>
+
+Name
+
+</th>
+
+<th>
+
+Tamil Name
+
+</th>
+
+<th>
+
+Mobile No
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody
+id="tbodyCustomer">
+
+<tr>
+
+<td
+colspan="3"
+class="center">
+
+No Records
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<div
+class="popup"
+id="editPopup">
+
+<div
+class="popupContent">
+
+<div
+class="popupHeader">
+
+Edit Customer
+
+</div>
+
+<div
+class="popupBody">
+
+<div
+class="formRow">
+
+<label>
+
+Name
+
+</label>
+
+<input
+type="text"
+id="editName">
+
+</div>
+
+<div
+class="formRow">
+
+<label>
+
+Tamil Name
+
+</label>
+
+<input
+type="text"
+id="editNameTam">
+
+</div>
+
+<div
+class="formRow">
+
+<label>
+
+Mobile No
+
+</label>
+
+<input
+type="text"
+id="editMobNo"
+maxlength="10">
+
+</div>
+
+</div>
+
+<div
+class="popupFooter">
+
+<button
+id="btnUpdate">
+
+UPDATE
+
+</button>
+
+<button
+id="btnDelete">
+
+DELETE
+
+</button>
+
+<button
+id="btnCancel">
+
+CANCEL
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+<div id="suggestions" class="suggestions-dropdown hidden"></div>
+
+<script src="tamil_dictionary.js"></script>
+<script src="tamil_key_script.js"></script>
+<script src="velavan_cust_mas.js"></script>
+
+</body>
+
+</html>
