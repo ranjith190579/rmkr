@@ -1130,6 +1130,14 @@ async function saveEntryToServer(data){
 
             await loadLedger();
 
+            // Send Whatsapp Latest saved entry------------------------------------
+            //const last = ledger[0];
+            //sendWhatsApp(
+            //    "9942953388",     // Replace with the party's mobile number
+            //    last
+            //);            
+            //---------------------------------------------------------------------
+
             clearEntry();
 
             updateSummary();
@@ -1213,5 +1221,34 @@ function loadEditPopup(item){
     calculateEditClosing();
 
     openPopup();
+
+}
+
+function sendWhatsApp(mobile, data){
+
+    if(!mobile)
+        return;
+
+    let msg =
+`💰 CASH BOOK
+
+Date : ${data.entry_date}
+Time : ${data.entry_time}
+
+Type : ${data.type}
+Amount : ₹${formatAmount(data.amount)}
+
+Opening : ₹${formatAmount(data.opening)}
+Closing : ₹${formatAmount(data.closing)}
+
+Remarks : ${data.remarks}`;
+
+    const url =
+    "https://wa.me/91" +
+    mobile +
+    "?text=" +
+    encodeURIComponent(msg);
+
+    window.open(url, "_blank");
 
 }
