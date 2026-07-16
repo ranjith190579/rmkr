@@ -102,6 +102,18 @@ function registerEvents(){
         searchCustomer
 
     );
+    document.getElementById("btnSave").addEventListener("keydown", function(e){
+
+        if(e.key == "Enter"){
+
+            e.preventDefault();
+            if(isSaving)
+            return;
+            saveCustomer();
+
+        }
+
+    });
 
 }
 /*=========================================
@@ -446,7 +458,10 @@ document.addEventListener(
 "keydown",
 
 function(e){
-
+    if (isSaving) {
+        e.preventDefault();
+        return;
+    }
     if(document
        .getElementById("editPopup")
        .style.display=="flex"){
@@ -688,7 +703,8 @@ async function saveCustomerToServer(data){
             await loadCustomers();
 
             clearEntry();
-
+            selectedCustomerIndex = -1;
+            highlightSelectedCustomer();
             focusName();
 
         }
