@@ -419,6 +419,55 @@ tbody tr:hover{
     white-space:nowrap;
 
 }
+.suggestions-dropdown{
+
+    position:fixed;
+
+    background:#fff;
+
+    border:1px solid #bbb;
+
+    border-radius:5px;
+
+    box-shadow:0 3px 8px rgba(0,0,0,.2);
+
+    max-height:250px;
+
+    overflow-y:auto;
+
+    z-index:9999;
+
+    min-width:250px;
+
+}
+
+.suggestions-dropdown.hidden{
+
+    display:none;
+
+}
+
+.suggestion-item{
+
+    padding:8px 10px;
+
+    cursor:pointer;
+
+}
+
+.suggestion-item:hover{
+
+    background:#dceeff;
+
+}
+
+.suggestion-item.selected{
+
+    background:#1976d2;
+
+    color:white;
+
+}
 </style>
 
 </head>
@@ -434,12 +483,22 @@ tbody tr:hover{
 <!-- ===================== -->
 
 <div class="entryRow">
+    <label>Customer :</label>
 
+    <input
+        type="text"
+        id="txtCustomer"
+        placeholder="Type customer name..."
+        autocomplete="off">
+        
     <label>Date :</label>
 
     <input
         type="date"
         id="txtDate">
+
+ 
+
 
     <label>Opening :</label>
 
@@ -464,7 +523,10 @@ tbody tr:hover{
     </select>
 
 </div>
-
+<div
+    id="customerSuggestions"
+    class="suggestions-dropdown hidden">
+</div>
 
 <!-- ===================== -->
 <!-- Row 2 -->

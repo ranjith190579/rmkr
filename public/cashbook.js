@@ -12,6 +12,17 @@ let editMode = false;
 let editId = null;
 
 let isSaving = false;
+
+let customers = [];
+
+let filteredCustomers = [];
+
+let selectedSuggestion = -1;
+
+let selectedCustomer = null;
+
+let customerOpeningBalance = 0;
+
 /*=========================================
         API URL
 =========================================*/
@@ -20,6 +31,327 @@ let isSaving = false;
 const API = "";
 
 
+function searchCustomer(){
+
+    const txt =
+    document
+    .getElementById("txtCustomer");
+
+    const text =
+    txt.value
+    .trim()
+    .toLowerCase();
+
+    if(text==""){
+
+        hideSuggestions();
+
+        selectedCustomer = null;
+
+        return;
+
+    }
+
+    filteredCustomers =
+    customers.filter(function(item){
+
+        return(
+
+            item.name
+            .toLowerCase()
+            .includes(text)
+
+            ||
+
+            item.name_in_tam
+            .includes(text)
+
+            ||
+
+            item.mob_no
+            .includes(text)
+
+        );
+
+    });
+
+    selectedSuggestion = -1;
+
+    showSuggestions();
+
+}
+function showSuggestions(){
+
+    const div =
+    document.getElementById(
+        "customerSuggestions"
+    );
+
+    div.innerHTML="";
+
+    if(filteredCustomers.length==0){
+
+        hideSuggestions();
+
+        return;
+
+    }
+
+    filteredCustomers.forEach(function(item,index){
+
+        const row =
+        document.createElement("div");
+
+        row.className =
+        "suggestion-item";
+
+        row.innerHTML =
+
+            item.name +
+
+            " (" +
+
+            item.mob_no +
+
+            ")";
+
+        row.onclick=function(){
+
+            selectCustomer(index);
+
+        };
+
+        div.appendChild(row);
+
+    });
+
+    positionSuggestions();
+
+    div.classList.remove("hidden");
+
+}
+function showSuggestions(){
+
+    const div =
+    document.getElementById(
+        "customerSuggestions"
+    );
+
+    div.innerHTML="";
+
+    if(filteredCustomers.length==0){
+
+        hideSuggestions();
+
+        return;
+
+    }
+
+    filteredCustomers.forEach(function(item,index){
+
+        const row =
+        document.createElement("div");
+
+        row.className =
+        "suggestion-item";
+
+        row.innerHTML =
+
+            item.name +
+
+            " (" +
+
+            item.mob_no +
+
+            ")";
+
+        row.onclick=function(){
+
+            selectCustomer(index);
+
+        };
+
+        div.appendChild(row);
+
+    });
+
+    positionSuggestions();
+
+    div.classList.remove("hidden");
+
+}
+function hideSuggestions(){
+
+    document
+    .getElementById(
+        "customerSuggestions"
+    )
+    .classList
+    .add("hidden");
+
+}
+function positionSuggestions(){
+
+    const txt =
+    document
+    .getElementById(
+        "txtCustomer"
+    );
+
+    const div =
+    document
+    .getElementById(
+        "customerSuggestions"
+    );
+
+    const rect =
+    txt.getBoundingClientRect();
+
+    div.style.left =
+    rect.left + "px";
+
+    div.style.top =
+    (rect.bottom+2)+"px";
+
+    div.style.width =
+    rect.width+"px";
+
+}
+async function loadCustomerLedger(customerId){
+
+    try{
+
+        const response =
+        await fetch("/cashbooklist/" + customerId);
+
+        const result =
+        await response.json();
+
+        ledger = result;
+
+        refreshTable();
+
+        calculateSummary();
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        alert("Unable to load customer ledger.");
+
+    }
+
+}
+function selectCustomer(index){
+
+    selectedCustomer =
+    filteredCustomers[index];
+
+    document
+    .getElementById(
+        "txtCustomer"
+    )
+    .value =
+    selectedCustomer.name;
+
+    hideSuggestions();
+
+
+    loadOpeningBalance(selectedCustomer._id);
+
+    loadLedger(selectedCustomer._id);
+
+}
+function customerKeyDown(e){
+
+    if(document
+       .getElementById("customerSuggestions")
+       .classList.contains("hidden"))
+        return;
+
+    if(e.key=="ArrowDown"){
+
+        e.preventDefault();
+
+        if(selectedSuggestion <
+           filteredCustomers.length-1){
+
+            selectedSuggestion++;
+
+        }
+
+        highlightSuggestion();
+
+    }
+
+    else if(e.key=="ArrowUp"){
+
+        e.preventDefault();
+
+        if(selectedSuggestion>0){
+
+            selectedSuggestion--;
+
+        }
+
+        highlightSuggestion();
+
+    }
+
+    else if(e.key=="Enter"){
+
+        e.preventDefault();
+
+        if(selectedSuggestion>=0){
+
+            selectCustomer(selectedSuggestion);
+
+        }
+
+    }
+
+    else if(e.key=="Escape"){
+
+        hideSuggestions();
+
+    }
+
+}
+function highlightSuggestion(){
+
+    const rows =
+    document.querySelectorAll(
+        "#customerSuggestions .suggestion-item"
+    );
+
+    rows.forEach(function(r){
+
+        r.classList.remove("selected");
+
+    });
+
+    if(selectedSuggestion<0)
+        return;
+
+    rows[selectedSuggestion]
+        .classList.add("selected");
+
+    rows[selectedSuggestion]
+        .scrollIntoView({
+            block:"nearest"
+        });
+
+}
+async function loadCustomers(){
+
+    const response =
+    await fetch("/velavan_cust_list");
+
+    customers =
+    await response.json();
+
+}
 /*=========================================
         LOAD PAGE
 =========================================*/
@@ -34,7 +366,8 @@ window.onload = function(){
     .getElementById("cmbType")
     .value = "Payment";
 
-    loadLedger();
+    loadCustomers();
+    //loadLedger();
 
 };
 
@@ -68,6 +401,20 @@ function setToday(){
 =========================================*/
 
 function registerEvents(){
+
+    document
+    .getElementById("txtCustomer")
+    .addEventListener(
+        "input",
+        searchCustomer
+    );
+
+    document
+    .getElementById("txtCustomer")
+    .addEventListener(
+        "keydown",
+        customerKeyDown
+    );
 
     document
     .getElementById("cmbType")
@@ -156,8 +503,37 @@ function registerEvents(){
 }
 
 /*=========================================
-        DELETE ENTRY
+        REFRESH BALANCES
 =========================================*/
+
+function refreshBalances(){
+
+    if(ledger.length==0){
+
+        openingBalance = 0;
+        closingBalance = 0;
+
+    }
+    else{
+
+        openingBalance =
+        Number(ledger[0].closing);
+
+        closingBalance =
+        Number(ledger[0].closing);
+
+    }
+
+    document.getElementById("txtOpening").value =
+    formatAmount(openingBalance);
+
+    document.getElementById("txtClosing").value =
+    formatAmount(closingBalance);
+
+    document.getElementById("lblCurrentBalance").innerHTML =
+    formatAmount(closingBalance);
+
+}
 
 /*=========================================
         DELETE ENTRY
@@ -196,12 +572,31 @@ async function deleteEntryFromServer(){
         await response.json();
 
         if(result.success){
+            // Delete ledger[] in memory
+
+            ledger = ledger.filter(function(x){
+
+                return x._id != editId;
+
+            });
+
+            refreshScreen();
 
             closePopup();
 
-            await loadLedger();
+            focusAmount();
+/*
+            closePopup();
+
+            //await loadOpeningBalance(selectedCustomer._id);
+
+            //await loadLedger(selectedCustomer._id);
+            //updateSummary();
+            
+            await refreshCustomer();
 
             focusAmount();
+*/
 
         }
         else{
@@ -289,13 +684,38 @@ async function updateEntryToServer(data){
         await response.json();
 
         if(result.success){
+            // Update ledger[] in memory
+
+            const item = ledger.find(function(x){
+
+                return x._id == editId;
+
+            });
+
+            item.amount = data.amount;
+
+            item.type = data.type;
+
+            item.remarks = data.remarks;
+
+            refreshScreen();
 
             closePopup();
 
-            await loadLedger();
-
             focusAmount();
 
+            /*
+            //await loadOpeningBalance(selectedCustomer._id);
+
+            //await loadLedger(selectedCustomer._id);
+
+            closePopup();
+
+            //updateSummary();
+            await refreshCustomer();
+
+            focusAmount();
+*/
         }
         else{
 
@@ -392,7 +812,7 @@ function editTypeChanged(){
 /*=========================================
         LOAD LEDGER
 =========================================*/
-
+/*
 async function loadLedger(){
 
     try{
@@ -405,7 +825,7 @@ async function loadLedger(){
 
         ledger = result;
         console.log("Ledger Data:", ledger);
-console.log("Rows:", ledger.length);
+        console.log("Rows:", ledger.length);
 
         refreshTable();
 
@@ -427,7 +847,89 @@ console.log("Rows:", ledger.length);
     }
 
 }
+*/
+async function loadOpeningBalance(customerId){
 
+    try{
+
+        const response =
+        await fetch("/cashbookopening/" + customerId);
+
+        const result =
+        await response.json();
+
+        openingBalance =
+        Number(result.opening);
+
+        closingBalance =
+        openingBalance;
+
+        document
+        .getElementById("txtOpening")
+        .value =
+        openingBalance.toFixed(2);
+
+        document
+        .getElementById("txtClosing")
+        .value =
+        closingBalance.toFixed(2);
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        openingBalance = 0;
+
+        closingBalance = 0;
+
+        document
+        .getElementById("txtOpening")
+        .value = "0.00";
+
+        document
+        .getElementById("txtClosing")
+        .value = "0.00";
+
+    }
+
+}
+
+async function loadLedger(customerId){
+
+    if(!customerId)
+        return;
+
+    const response =
+    await fetch("/cashbooklist/" + customerId);
+
+    const result =
+    await response.json();
+
+    ledger = result;
+
+    refreshTable();
+
+}
+
+/*=========================================
+        REFRESH CUSTOMER LEDGER
+=========================================*/
+
+async function refreshCustomer(){
+
+    if(!selectedCustomer)
+        return;
+
+    await loadOpeningBalance(selectedCustomer._id);
+
+    await loadLedger(selectedCustomer._id);
+    document.getElementById("txtCustomer").value =
+    selectedCustomer.name;
+
+    updateSummary();
+
+}
 /*=========================================
         LAST ENTRY
 =========================================*/
@@ -569,6 +1071,7 @@ function dateChanged(){
 =========================================*/
 
 function calculateClosing(){
+   
 
     let amount =
     document.getElementById("txtAmount").value;
@@ -653,14 +1156,7 @@ function formatDate(value){
 
 function clearEntry(){
 
-    document
-    .getElementById("cmbType")
-    .value="Payment";
-
-    document
-    .getElementById("lblAmount")
-    .innerHTML="Amount :";
-
+   
     document
     .getElementById("txtAmount")
     .value="";
@@ -751,6 +1247,77 @@ function closePopup(){
 
 
 /*=========================================
+        RECALCULATE LEDGER
+=========================================*/
+
+function recalculateLedger(){
+
+    if(ledger.length==0)
+        return;
+
+    let balance = 0;
+
+    for(let i=ledger.length-1;i>=0;i--){
+
+        ledger[i].opening = balance;
+
+        if(ledger[i].type=="Receipt"){
+
+            balance =
+            balance +
+            Number(ledger[i].amount);
+
+        }
+        else{
+
+            balance =
+            balance -
+            Number(ledger[i].amount);
+
+        }
+
+        ledger[i].closing = balance;
+
+    }
+
+}
+/*=========================================
+        KEEP LAST 45 DAYS
+=========================================*/
+
+function keepLast45Days(){
+
+    const today = new Date();
+
+    ledger = ledger.filter(function(item){
+
+        const dt = new Date(item.entry_date);
+
+        const diff =
+        (today - dt) /
+        (1000 * 60 * 60 * 24);
+
+        return diff <= 45;
+
+    });
+
+}
+/*=========================================
+        REFRESH SCREEN
+=========================================*/
+
+function refreshScreen(){
+
+    recalculateLedger();
+
+    refreshTable();
+
+    refreshBalances();
+
+    updateSummary();
+
+}
+/*=========================================
         TABLE
 =========================================*/
 
@@ -835,7 +1402,7 @@ function refreshTable(){
             };
 
         }
-console.log("Adding Row:", item);
+
         tbody.appendChild(tr);
 
     });
@@ -988,7 +1555,17 @@ async function saveEntry(){
         .value
         .trim();
 
+        if(selectedCustomer==null){
 
+            alert("Please select a customer.");
+
+            document
+            .getElementById("txtCustomer")
+            .focus();
+
+            return;
+
+        }
         /*-------------------------------
             VALIDATE DATE
         -------------------------------*/
@@ -1055,13 +1632,29 @@ async function saveEntry(){
 
         const data={
 
-            entry_date : entryDate,
+            customer_id :
+            selectedCustomer._id,
 
-            amount : amount,
+            customer_name :
+            selectedCustomer.name,
 
-            type : type,
+            entry_date :
+            entryDate,
 
-            remarks : remarks
+            opening :
+            Number(document.getElementById("txtOpening").value),
+
+            amount :
+            amount,
+
+            type :
+            type,
+
+            closing :
+            Number(document.getElementById("txtClosing").value),
+
+            remarks :
+            remarks
 
         };
 
@@ -1125,32 +1718,44 @@ async function saveEntryToServer(data){
 
         const result =
         await response.json();
+        //console.log("Result:", result);
+        //console.log("Doc:", result.doc);
 
         if(result.success){
 
-            await loadLedger();
+            ledger.unshift(result.doc);
 
-            // Send Whatsapp Latest saved entry------------------------------------
-            //const last = ledger[0];
-            //sendWhatsApp(
-            //    "9942953388",     // Replace with the party's mobile number
-            //    last
-            //);            
-            //---------------------------------------------------------------------
+            keepLast45Days();
+
+            refreshScreen();
 
             clearEntry();
 
-            updateSummary();
+            focusAmount(); 
+            
+            // Optional WhatsApp
+            //sendWhatsApp("9942953388", result.doc);
+/*
+            // Refresh the grid
+            //refreshTable();
+            await refreshCustomer();
+
+            // Optional WhatsApp
+            //sendWhatsApp("9942953388", result.doc);
+
+            clearEntry();
+
+            //updateSummary();
 
             focusAmount();
-
+*/
         }
         else{
 
             alert(result.message);
 
         }
-
+ 
     }
     catch(ex){
 
