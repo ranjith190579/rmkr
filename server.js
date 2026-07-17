@@ -41,6 +41,16 @@ dbSaravanan.collection("daily_cashbook");
 const velavan_cust_mas =
 dbSaravanan.collection("velavan_cust_mas");
 
+await cashbook.createIndex({
+
+    customer_id: 1,
+
+    created_at: -1
+
+});
+
+//console.log("daily_cashbook index created.");
+
 console.log("Mongo Connected");
 
 app.listen(3000, () => {
@@ -668,7 +678,11 @@ async function saveCashBook(data, res){
 
         const valid =
         await validateEntryDate(
+
+            data.customer_id,
+
             data.entry_date
+
         );
 
         if(!valid){
@@ -690,9 +704,15 @@ async function saveCashBook(data, res){
 
         const last =
         await cashbook
-        .find()
+        .find({
+
+            customer_id : data.customer_id
+
+        })
         .sort({
-            created_at:-1
+
+            created_at : -1
+
         })
         .limit(1)
         .toArray();
@@ -735,13 +755,17 @@ async function saveCashBook(data, res){
         /*-------------------------
             Build Document
         --------------------------*/
-
         const doc={
+
+            customer_id : data.customer_id,
+
+            customer_name : data.customer_name,
 
             entry_date : data.entry_date,
 
             entry_time : getCurrentTime(),
-            created_at:new Date(),
+
+            created_at : new Date(),
 
             opening : opening,
 
@@ -754,13 +778,23 @@ async function saveCashBook(data, res){
             remarks : data.remarks
 
         };
+        
 
 
         /*-------------------------
-            Insert
+        Insert
         --------------------------*/
 
+        const result =
         await cashbook.insertOne(doc);
+
+
+        /*-------------------------
+            MongoDB generated _id
+        --------------------------*/
+
+        doc._id =
+        result.insertedId;
 
 
         /*-------------------------
@@ -769,7 +803,9 @@ async function saveCashBook(data, res){
 
         res.json({
 
-            success:true
+            success : true,
+
+            doc : doc
 
         });
 
@@ -806,12 +842,20 @@ function getCurrentTime(){
         DATE VALIDATION
 =========================================*/
 
-async function validateEntryDate(entryDate){
+async function validateEntryDate(customerId, entryDate){
 
     const last =
     await cashbook
-    .find()
-    .sort({created_at:-1})
+    .find({
+
+        customer_id : customerId
+
+    })
+    .sort({
+
+        created_at : -1
+
+    })
     .limit(1)
     .toArray();
 
@@ -830,14 +874,75 @@ async function validateEntryDate(entryDate){
     return true;
 
 }
-
 /*=========================================
-        CASH BOOK LIST
+        CASHBOOK OPENING BALANCE
 =========================================*/
 
-app.get("/cashbooklist", async (req, res) => {
+app.get("/cashbookopening/:customerId", async (req, res) => {
+
+    try{
+
+        const customerId = req.params.customerId;
+
+        const lastEntry =
+        await cashbook
+        .find({
+
+            customer_id : customerId
+
+        })
+        .sort({
+
+            entry_date : -1,
+
+            created_at : -1
+
+        })
+        .limit(1)
+        .toArray();
+
+        if(lastEntry.length==0){
+
+            return res.json({
+
+                opening : 0
+
+            });
+
+        }
+
+        res.json({
+
+            opening :
+
+            Number(lastEntry[0].closing)
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            opening : 0
+
+        });
+
+    }
+
+});
+/*=========================================
+        CUSTOMER CASHBOOK LIST
+=========================================*/
+
+app.get("/cashbooklist/:customerId", async (req, res) => {
 
     try {
+
+        const customerId =
+        req.params.customerId;
 
         const today = new Date();
 
@@ -847,29 +952,39 @@ app.get("/cashbooklist", async (req, res) => {
 
         const yyyy = fromDate.getFullYear();
 
-        const mm = String(fromDate.getMonth() + 1).padStart(2, "0");
+        const mm =
 
-        const dd = String(fromDate.getDate()).padStart(2, "0");
+        String(fromDate.getMonth()+1)
+        .padStart(2,"0");
+
+        const dd =
+
+        String(fromDate.getDate())
+        .padStart(2,"0");
 
         const startDate =
-            `${yyyy}-${mm}-${dd}`;
+
+        `${yyyy}-${mm}-${dd}`;
 
         const rows =
+
         await cashbook
         .find({
 
-            entry_date: {
+            customer_id : customerId,
 
-                $gte: startDate
+            entry_date : {
+
+                $gte : startDate
 
             }
 
         })
         .sort({
 
-            //created_at: 1
-            entry_date: -1,
-            created_at: -1            
+            entry_date : -1,
+
+            created_at : -1
 
         })
         .toArray();
@@ -877,7 +992,7 @@ app.get("/cashbooklist", async (req, res) => {
         res.json(rows);
 
     }
-    catch (ex) {
+    catch(ex){
 
         console.log(ex);
 
@@ -969,22 +1084,6 @@ async function updateCashBook(data,res){
 
     try{
 
-        const last =
-        await isLastEntry(data._id);
-
-        if(!last){
-
-            return res.json({
-
-                success:false,
-
-                message:"Only last entry can be edited."
-
-            });
-
-        }
-
-
         const doc =
         await cashbook.findOne({
 
@@ -1003,6 +1102,30 @@ async function updateCashBook(data,res){
             });
 
         }
+
+        const last =
+        await isLastEntry(
+
+            data._id,
+
+            doc.customer_id
+
+        );
+
+        if(!last){
+
+            return res.json({
+
+                success:false,
+
+                message:"Only last entry can be edited."
+
+            });
+
+        }
+
+
+        
 
 
         let closing =
@@ -1074,13 +1197,19 @@ async function updateCashBook(data,res){
         CHECK LAST ENTRY
 =========================================*/
 
-async function isLastEntry(id){
+async function isLastEntry(id, customerId){
 
     const last =
     await cashbook
-    .find()
+    .find({
+
+        customer_id : customerId
+
+    })
     .sort({
-        created_at:-1
+
+        created_at : -1
+
     })
     .limit(1)
     .toArray();
@@ -1088,7 +1217,7 @@ async function isLastEntry(id){
     if(last.length==0)
         return false;
 
-    return last[0]._id.toString()==id;
+    return last[0]._id.toString() == id;
 
 }
 
@@ -1141,8 +1270,32 @@ async function deleteCashBook(id, res){
 
     try{
 
+        const doc =
+        await cashbook.findOne({
+
+            _id : new ObjectId(id)
+
+        });
+
+        if(!doc){
+
+            return res.json({
+
+                success:false,
+
+                message:"Entry not found."
+
+            });
+
+        }
         const last =
-        await isLastEntry(id);
+        await isLastEntry(
+
+            id,
+
+            doc.customer_id
+
+        );
 
         if(!last){
 
