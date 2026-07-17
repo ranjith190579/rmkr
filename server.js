@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 //import { downloadOrders } from './downloadorders.js';
 import path from 'path';
+const LEDGER_LIMIT = 20;
 
 dotenv.config();
 
@@ -939,45 +940,17 @@ app.get("/cashbookopening/:customerId", async (req, res) => {
 
 app.get("/cashbooklist/:customerId", async (req, res) => {
 
-    try {
+    try{
 
         const customerId =
         req.params.customerId;
-
-        const today = new Date();
-
-        const fromDate = new Date();
-
-        fromDate.setDate(today.getDate() - 45);
-
-        const yyyy = fromDate.getFullYear();
-
-        const mm =
-
-        String(fromDate.getMonth()+1)
-        .padStart(2,"0");
-
-        const dd =
-
-        String(fromDate.getDate())
-        .padStart(2,"0");
-
-        const startDate =
-
-        `${yyyy}-${mm}-${dd}`;
 
         const rows =
 
         await cashbook
         .find({
 
-            customer_id : customerId,
-
-            entry_date : {
-
-                $gte : startDate
-
-            }
+            customer_id : customerId
 
         })
         .sort({
@@ -987,6 +960,7 @@ app.get("/cashbooklist/:customerId", async (req, res) => {
             created_at : -1
 
         })
+        .limit(LEDGER_LIMIT)
         .toArray();
 
         res.json(rows);
