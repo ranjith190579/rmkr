@@ -1725,7 +1725,7 @@ async function saveEntryToServer(data){
 
             ledger.unshift(result.doc);
 
-            keepLast45Days();
+            //keepLast45Days();
 
             refreshScreen();
 
