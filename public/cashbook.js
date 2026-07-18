@@ -44,9 +44,11 @@ function searchCustomer(){
 
     if(text==""){
 
-        hideSuggestions();
+        filteredCustomers = [...customers];
 
-        selectedCustomer = null;
+        selectedSuggestion = -1;
+
+        showSuggestions();
 
         return;
 
@@ -499,39 +501,80 @@ function registerEvents(){
     "click",
     deleteEntry
     );
+    
+    document
+    .getElementById("txtCustomer")
+    .addEventListener(
+        "focus",
+        searchCustomer
+    );
+
+    document
+    .getElementById("txtCustomer")
+    .addEventListener(
+        "focus",
+        function(){
+
+            this.select();
+
+        }
+    );
+   
+    document
+    .getElementById("txtCustomer")
+    .addEventListener(
+        "blur",
+        function(){
+
+            setTimeout(function(){
+
+                hideSuggestions();
+
+            }, 150);
+
+        }
+    );
 
 }
 
-/*=========================================
-        REFRESH BALANCES
-=========================================*/
+function validateCustomer(){
 
-function refreshBalances(){
+    const txt =
+    document
+    .getElementById("txtCustomer");
 
-    if(ledger.length==0){
+    const value =
+    txt.value.trim();
 
-        openingBalance = 0;
-        closingBalance = 0;
+    if(value==""){
 
-    }
-    else{
+        selectedCustomer = null;
 
-        openingBalance =
-        Number(ledger[0].closing);
-
-        closingBalance =
-        Number(ledger[0].closing);
+        return false;
 
     }
 
-    document.getElementById("txtOpening").value =
-    formatAmount(openingBalance);
+    const customer =
+    customers.find(function(item){
 
-    document.getElementById("txtClosing").value =
-    formatAmount(closingBalance);
+        return (
+            item.name.toLowerCase() ==
+            value.toLowerCase()
+        );
 
-    document.getElementById("lblCurrentBalance").innerHTML =
-    formatAmount(closingBalance);
+    });
+
+    if(customer){
+
+        selectedCustomer = customer;
+
+        return true;
+
+    }
+
+    selectedCustomer = null;
+
+    return false;
 
 }
 
@@ -556,47 +599,36 @@ async function deleteEntryFromServer(){
     try{
 
         const response =
-        await fetch(
+        await fetch("/deletecashbook/" + editId,{
 
-            "/deletecashbook/"+editId,
+            method:"DELETE"
 
-            {
-
-                method:"DELETE"
-
-            }
-
-        );
+        });
 
         const result =
         await response.json();
 
         if(result.success){
-            // Delete ledger[] in memory
 
-            ledger = ledger.filter(function(x){
+            // Remove latest transaction
+            ledger.shift();
 
-                return x._id != editId;
+            if(ledger.length > 0){
 
-            });
+                setCurrentBalance(ledger[0].closing);
 
-            refreshScreen();
+            }
+            else{
+
+                setCurrentBalance(0);
+
+            }
+
+            refreshTable();
 
             closePopup();
 
             focusAmount();
-/*
-            closePopup();
-
-            //await loadOpeningBalance(selectedCustomer._id);
-
-            //await loadLedger(selectedCustomer._id);
-            //updateSummary();
-            
-            await refreshCustomer();
-
-            focusAmount();
-*/
 
         }
         else{
@@ -671,9 +703,7 @@ async function updateEntryToServer(data){
             method:"PUT",
 
             headers:{
-
                 "Content-Type":"application/json"
-
             },
 
             body:JSON.stringify(data)
@@ -684,38 +714,37 @@ async function updateEntryToServer(data){
         await response.json();
 
         if(result.success){
-            // Update ledger[] in memory
 
-            const item = ledger.find(function(x){
-
-                return x._id == editId;
-
-            });
+            // Latest transaction
+            const item = ledger[0];
 
             item.amount = data.amount;
-
             item.type = data.type;
-
             item.remarks = data.remarks;
 
-            refreshScreen();
+            if(item.type=="Receipt"){
+
+                item.closing =
+                Number(item.opening) +
+                Number(item.amount);
+
+            }
+            else{
+
+                item.closing =
+                Number(item.opening) -
+                Number(item.amount);
+
+            }
+
+            setCurrentBalance(item.closing);
+
+            refreshTable();
 
             closePopup();
 
             focusAmount();
 
-            /*
-            //await loadOpeningBalance(selectedCustomer._id);
-
-            //await loadLedger(selectedCustomer._id);
-
-            closePopup();
-
-            //updateSummary();
-            await refreshCustomer();
-
-            focusAmount();
-*/
         }
         else{
 
@@ -848,6 +877,21 @@ async function loadLedger(){
 
 }
 */
+function setCurrentBalance(balance){
+
+    openingBalance = Number(balance);
+    closingBalance = Number(balance);
+
+    document.getElementById("txtOpening").value =
+    formatAmount(openingBalance);
+
+    document.getElementById("txtClosing").value =
+    formatAmount(closingBalance);
+
+    document.getElementById("lblCurrentBalance").innerHTML =
+    formatAmount(closingBalance);
+
+}
 async function loadOpeningBalance(customerId){
 
     try{
@@ -858,38 +902,14 @@ async function loadOpeningBalance(customerId){
         const result =
         await response.json();
 
-        openingBalance =
-        Number(result.opening);
-
-        closingBalance =
-        openingBalance;
-
-        document
-        .getElementById("txtOpening")
-        .value =
-        openingBalance.toFixed(2);
-
-        document
-        .getElementById("txtClosing")
-        .value =
-        closingBalance.toFixed(2);
+       setCurrentBalance(result.opening);
 
     }
     catch(ex){
 
         console.log(ex);
 
-        openingBalance = 0;
-
-        closingBalance = 0;
-
-        document
-        .getElementById("txtOpening")
-        .value = "0.00";
-
-        document
-        .getElementById("txtClosing")
-        .value = "0.00";
+        setCurrentBalance(0);
 
     }
 
@@ -903,12 +923,12 @@ async function loadLedger(customerId){
     const response =
     await fetch("/cashbooklist/" + customerId);
 
-    const result =
+    ledger =
     await response.json();
 
-    ledger = result;
-
     refreshTable();
+
+    updateLastEntry();
 
 }
 
@@ -1165,7 +1185,6 @@ function clearEntry(){
     .getElementById("txtRemarks")
     .value="";
 
-    calculateOpening();
 
 }
 
@@ -1249,7 +1268,7 @@ function closePopup(){
 /*=========================================
         RECALCULATE LEDGER
 =========================================*/
-
+/*
 function recalculateLedger(){
 
     if(ledger.length==0)
@@ -1281,6 +1300,7 @@ function recalculateLedger(){
     }
 
 }
+    */
 /*=========================================
         KEEP LAST 45 DAYS
 =========================================*/
@@ -1305,18 +1325,15 @@ function keepLast45Days(){
 /*=========================================
         REFRESH SCREEN
 =========================================*/
-
+/*
 function refreshScreen(){
-
-    recalculateLedger();
 
     refreshTable();
 
-    refreshBalances();
-
-    updateSummary();
+    updateLastEntry();
 
 }
+    */
 /*=========================================
         TABLE
 =========================================*/
@@ -1555,9 +1572,9 @@ async function saveEntry(){
         .value
         .trim();
 
-        if(selectedCustomer==null){
+        if(!validateCustomer()){
 
-            alert("Please select a customer.");
+            alert("Please select a valid customer.");
 
             document
             .getElementById("txtCustomer")
@@ -1725,13 +1742,15 @@ async function saveEntryToServer(data){
 
             ledger.unshift(result.doc);
 
-            //keepLast45Days();
+            refreshTable();
 
-            refreshScreen();
+            updateLastEntry();
+
+            setCurrentBalance(result.doc.closing);
 
             clearEntry();
 
-            focusAmount(); 
+            focusAmount();
             
             // Optional WhatsApp
             //sendWhatsApp("9942953388", result.doc);
