@@ -6,6 +6,7 @@ import cors from 'cors';
 //import { downloadOrders } from './downloadorders.js';
 import path from 'path';
 const LEDGER_LIMIT = 20;
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -50,6 +51,13 @@ await cashbook.createIndex({
 
 });
 
+let cashbookLock = {
+
+    lockId : null,
+
+    openedAt : null
+
+};
 //console.log("daily_cashbook index created.");
 
 console.log("Mongo Connected");
@@ -617,15 +625,25 @@ app.get('/mer_trans_det', (req, res) => {
     );
 
 });
+function isCashbookOwner(req){
 
+    const tabId =
+    req.headers["tab-id"];
+
+    return cashbookSession.tabId == tabId;
+
+}
 /*=========================================
         SAVE CASH BOOK
 =========================================*/
 
 app.post("/savecashbook", async (req, res) => {
 
+
     try {
 
+        if(!checkCashbookLock(req,res))
+            return;
         const data = req.body;
 
         /*-----------------------------
@@ -1012,6 +1030,8 @@ function formatDate(date){
 app.put("/updatecashbook", async (req, res) => {
 
     try {
+        if(!checkCashbookLock(req,res))
+            return;
 
         const data = req.body;
 
@@ -1202,6 +1222,8 @@ async function isLastEntry(id, customerId){
 app.delete("/deletecashbook/:id", async (req, res) => {
 
     try {
+        if(!checkCashbookLock(req,res))
+            return;
 
         const id = req.params.id;
 
@@ -1836,6 +1858,26 @@ async function deleteVelavanCustomer(id,res){
 
     try{
 
+        // Check Cashbook
+        const cashEntry =
+        await cashbook.findOne({
+
+            customer_id : id
+
+        });
+
+        if(cashEntry){
+
+            return res.json({
+
+                success:false,
+
+                message:"Cannot delete. Cashbook entries found."
+
+            });
+
+        }
+
         await velavan_cust_mas.deleteOne({
 
             _id:new ObjectId(id)
@@ -1862,5 +1904,150 @@ async function deleteVelavanCustomer(id,res){
         });
 
     }
+
+}
+app.get("/cashbookopen",(req,res)=>{
+
+    try{
+
+        const browserLockId =
+        req.headers["cashbook-lock"];
+
+        // No lock exists, create one
+        if(cashbookLock.lockId == null){
+
+            const lockId =
+            crypto.randomUUID();
+
+            cashbookLock.lockId =
+            lockId;
+
+            cashbookLock.openedAt =
+            new Date();
+
+            return res.json({
+
+                success:true,
+
+                lockId:lockId
+
+            });
+
+        }
+
+        // Same browser refreshing
+        if(browserLockId == cashbookLock.lockId){
+
+            return res.json({
+
+                success:true,
+
+                lockId:cashbookLock.lockId
+
+            });
+
+        }
+
+        // Another browser/computer
+        res.json({
+
+            success:false,
+
+            message:"Cashbook is already opened."
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false
+
+        });
+
+    }
+
+});
+app.post("/cashbookclose",(req,res)=>{
+
+    try{
+
+        cashbookLock.lockId = null;
+
+        cashbookLock.openedAt = null;
+
+        res.json({
+
+            success:true
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.json({
+
+            success:false
+
+        });
+
+    }
+
+});
+
+app.get("/a9X7mK2p-reset-cashbook-lock",(req,res)=>{
+
+    try{
+
+        cashbookLock.lockId = null;
+
+        cashbookLock.openedAt = null;
+
+        res.send(
+
+            "<h2>Cashbook Lock Cleared Successfully.</h2>"
+
+        );
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+        res.send(
+
+            "<h2>Unable to Clear Cashbook Lock.</h2>"
+
+        );
+
+    }
+
+});
+function checkCashbookLock(req,res){
+ 
+
+    const browserLockId =
+    req.headers["cashbook-lock"];
+
+    if(browserLockId != cashbookLock.lockId){
+
+        res.json({
+
+            success:false,
+
+            message:"Cashbook session expired."
+
+        });
+
+        return false;
+
+    }
+
+    return true;
 
 }
