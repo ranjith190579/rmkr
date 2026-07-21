@@ -851,9 +851,19 @@ async function saveCashBook(data, res){
 
 function getCurrentTime(){
 
-    return new Date().toLocaleTimeString("en-GB", {
-        hour12: false
-    });
+    return new Date().toLocaleTimeString(
+
+        "en-GB",
+
+        {
+
+            hour12: false,
+
+            timeZone: "Asia/Kolkata"
+
+        }
+
+    );
 
 }
 
