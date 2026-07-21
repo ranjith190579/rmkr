@@ -2161,3 +2161,114 @@ window.addEventListener("unload", function(){
     navigator.sendBeacon("/cashbookclose");
 
 });
+
+function startVoiceSearch(){
+
+    if(
+
+        !("webkitSpeechRecognition" in window)
+
+        &&
+
+        !("SpeechRecognition" in window)
+
+    ){
+
+        alert("Voice recognition is not supported.");
+
+        return;
+
+    }
+
+    const Recognition =
+
+        window.SpeechRecognition ||
+
+        window.webkitSpeechRecognition;
+
+    const recognition = new Recognition();
+
+    recognition.lang = "ta-IN";
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+
+    recognition.onresult = function(event){
+
+        const text =
+
+        event.results[0][0].transcript;
+        console.log(text);
+
+        const txt =
+
+        document.getElementById("txtCustomer");
+
+        txt.value = text;
+
+        searchCustomer();
+
+    };
+
+    recognition.onerror = function(){
+
+        alert("Unable to recognize voice.");
+
+    };
+
+}
+/*
+function startVoiceSearch(){
+
+    const Recognition =
+
+        window.SpeechRecognition ||
+
+        window.webkitSpeechRecognition;
+
+    const recognition = new Recognition();
+
+    //recognition.lang = "ta-IN";
+    recognition.lang = "en-IN";
+
+    recognition.onstart = function(){
+
+        console.log("Listening...");
+
+    };
+
+    recognition.onspeechstart = function(){
+
+        console.log("Speech detected");
+
+    };
+
+    recognition.onresult = function(event){
+
+        const text =
+
+        event.results[0][0].transcript;
+
+        console.log(text);
+
+    };
+
+    recognition.onerror = function(event){
+
+        console.log(event.error);
+
+    };
+
+    recognition.onend = function(){
+
+        console.log("Finished");
+
+    };
+
+    recognition.start();
+
+}
+    */
