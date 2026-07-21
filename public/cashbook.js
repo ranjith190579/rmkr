@@ -23,6 +23,8 @@ let selectedCustomer = null;
 
 let customerOpeningBalance = 0;
 
+let cashbookLockId = "";
+
 /*=========================================
         API URL
 =========================================*/
@@ -30,6 +32,91 @@ let customerOpeningBalance = 0;
 //const API = "/cashbook";
 const API = "";
 
+async function openCashbook(){
+
+    const oldLockId =
+    sessionStorage.getItem(
+        "cashbookLockId"
+    );
+
+    const response =
+    await fetch(
+
+        "/cashbookopen",
+
+        {
+
+            headers:{
+
+                "Cashbook-Lock":
+
+                oldLockId || ""
+
+            }
+
+        }
+
+    );
+
+    const result =
+    await response.json();
+
+    if(!result.success){
+
+        alert(result.message);
+
+        window.location.href="/";
+
+        return false;
+
+    }
+
+    cashbookLockId =
+    result.lockId;
+
+    sessionStorage.setItem(
+
+        "cashbookLockId",
+
+        cashbookLockId
+
+    );
+
+    return true;
+
+}
+async function closeCashbook(){
+
+    try{
+
+        await fetch(
+
+            "/cashbookclose",
+
+            {
+
+                method:"POST",
+
+                headers:{
+
+                    "Cashbook-Lock":
+
+                    cashbookLockId
+
+                }
+
+            }
+
+        );
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+    }
+
+}
 
 function searchCustomer(){
 
@@ -57,21 +144,27 @@ function searchCustomer(){
     filteredCustomers =
     customers.filter(function(item){
 
+        const eng =
+        (item.name || "")
+        .toLowerCase();
+
+        const tam =
+        item.name_in_tam || "";
+
+        const mobile =
+        item.mob_no || "";
+
         return(
 
-            item.name
-            .toLowerCase()
-            .includes(text)
+            eng.includes(text.toLowerCase())
 
             ||
 
-            item.name_in_tam
-            .includes(text)
+            tam.includes(text)
 
             ||
 
-            item.mob_no
-            .includes(text)
+            mobile.includes(text)
 
         );
 
@@ -109,7 +202,8 @@ function showSuggestions(){
 
         row.innerHTML =
 
-            item.name +
+            item.name + "|" +
+            item.name_in_tam +
 
             " (" +
 
@@ -159,13 +253,24 @@ function showSuggestions(){
 
         row.innerHTML =
 
-            item.name +
+        "<div><b>" +
 
-            " (" +
+        item.name +
 
-            item.mob_no +
+        "</b> (" +
 
-            ")";
+        item.mob_no +
+
+        ")</div>" +
+
+        "<div>" +
+
+        item.name_in_tam +
+
+        "</div>";
+
+
+            
 
         row.onclick=function(){
 
@@ -352,13 +457,181 @@ async function loadCustomers(){
 
     customers =
     await response.json();
+    
 
 }
+async function checkCashbookSession(){
+
+    const response =
+    await fetch("/cashbooksession",{
+
+        headers:{
+
+            "Tab-Id" : getTabId()
+
+        }
+
+    });
+
+    const result =
+    await response.json();
+
+    if(result.success)
+        return true;
+
+    if(result.takenOver){
+
+        const ok =
+        confirm(
+        "Cashbook is already open on another device.\n\nTake Control?"
+        );
+
+        if(!ok){
+
+            window.location.href="/";
+
+            return false;
+
+        }
+
+        await takeControl();
+
+    }
+
+    return true;
+
+}
+async function takeControl(){
+
+    const response =
+    await fetch("/cashbooktakeover",{
+
+        method:"POST"
+
+    });
+
+    const result =
+    await response.json();
+
+    if(!result.success){
+
+        alert("Unable to take control.");
+
+        window.location.href="/";
+
+    }
+
+}
+function getTabId(){
+
+    let tabId =
+    sessionStorage.getItem("cashbookTabId");
+
+    if(tabId == null){
+
+        tabId = crypto.randomUUID();
+
+        sessionStorage.setItem(
+            "cashbookTabId",
+            tabId
+        );
+
+    }
+
+    return tabId;
+
+}
+function startHeartbeat(){
+
+    heartbeatTimer =
+
+    setInterval(
+
+        sendHeartbeat,
+
+        20000
+
+    );
+
+}
+async function sendHeartbeat(){
+
+    const response =
+
+    await fetch(
+
+        "/cashbookheartbeat",
+
+        {
+
+            method:"POST",
+
+            headers:{
+
+                "Tab-Id":getTabId()
+
+            }
+
+        }
+
+    );
+
+    const result =
+
+    await response.json();
+
+    if(result.success)
+        return;
+
+    clearInterval(
+
+        heartbeatTimer
+
+    );
+
+    alert(
+
+        "Cashbook has been opened on another device."
+
+    );
+
+    window.location.href="/";
+
+}
+async function releaseLock(){
+
+    try{
+
+        await fetch("/cashbookrelease",{
+
+            method:"POST",
+
+            headers:{
+
+                "Tab-Id":getTabId()
+
+            }
+
+        });
+
+    }
+    catch(ex){
+
+    }
+
+}
+
 /*=========================================
         LOAD PAGE
 =========================================*/
 
-window.onload = function(){
+window.onload = async function(){
+
+    const ok =
+    await openCashbook();
+
+    if(!ok)
+        return;
 
     setToday();
 
@@ -366,10 +639,9 @@ window.onload = function(){
 
     document
     .getElementById("cmbType")
-    .value = "Payment";
+    .value="Payment";
 
-    loadCustomers();
-    //loadLedger();
+    await loadCustomers();
 
 };
 
@@ -601,7 +873,12 @@ async function deleteEntryFromServer(){
         const response =
         await fetch("/deletecashbook/" + editId,{
 
-            method:"DELETE"
+            method:"DELETE",
+            headers:{
+
+                "Cashbook-Lock":cashbookLockId
+
+            }
 
         });
 
@@ -703,7 +980,8 @@ async function updateEntryToServer(data){
             method:"PUT",
 
             headers:{
-                "Content-Type":"application/json"
+                "Content-Type":"application/json",
+                "Cashbook-Lock":cashbookLockId
             },
 
             body:JSON.stringify(data)
@@ -1710,6 +1988,7 @@ async function saveEntry(){
 =========================================*/
 
 async function saveEntryToServer(data){
+    //console.log(cashbookLockId);
 
     const btn =
     document.getElementById("btnSave");
@@ -1726,7 +2005,8 @@ async function saveEntryToServer(data){
             method:"POST",
 
             headers:{
-                "Content-Type":"application/json"
+                "Content-Type":"application/json",
+                "Cashbook-Lock":cashbookLockId
             },
 
             body:JSON.stringify(data)
@@ -1876,3 +2156,8 @@ Remarks : ${data.remarks}`;
     window.open(url, "_blank");
 
 }
+window.addEventListener("unload", function(){
+
+    navigator.sendBeacon("/cashbookclose");
+
+});

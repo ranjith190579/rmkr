@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<button onclick="exitCashbook()">Exit</button>
 <title>Daily Cash Book</title>
 
 <style>
@@ -765,6 +766,14 @@ CANCEL
 </div>
 
 </div>
+<script>async function exitCashbook(){
+
+    await closeCashbook();
+
+    window.location.href="/";
+
+}</script>
+
 
 <script src="cashbook.js"></script>
 
