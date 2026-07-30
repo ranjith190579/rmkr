@@ -148,6 +148,21 @@ app.get('/products', async (req, res) => {
 
 });
 
+app.get("/productgroups", async function(req, res){
+
+    const data =
+    await db
+    .collection("tbl_prod_grp1_mas")
+    .find({})
+    .sort({id:1})
+    .toArray();
+
+    res.json(data);
+
+});
+
+
+
 
 // ======================
 // LOAD PENDING ORDER
