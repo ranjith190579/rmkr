@@ -225,7 +225,24 @@ body{
 
 .searchPanel{
 
-    margin-bottom:12px;
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+#cmbGroup1{
+
+    width:220px;
+
+    height:42px;
+
+    padding:6px;
+
+    border:1px solid #bdbdbd;
+
+    border-radius:8px;
 
 }
 
@@ -572,6 +589,20 @@ body{
 
     <div class="searchPanel">
 
+        <label for="cmbGroup1"><b>Group</b></label>
+
+        <select
+            id="cmbGroup1"
+            onchange="groupChanged()">
+
+            <option value="0">
+                All Products
+            </option>
+
+        </select>
+
+        <br><br>
+
         <input
             type="text"
             id="txtSearch"
@@ -682,6 +713,7 @@ let currentView = "all";
 window.onload = function () {
 
     loadCustomer();
+    loadProductGroups();
 
     loadProducts();
 
@@ -794,7 +826,39 @@ function loadCustomer() {
     }
 
 }
+async function loadProductGroups(){
 
+    try{
+
+        const response =
+        await fetch("/productgroups");
+
+        const groups =
+        await response.json();
+
+        const cmb =
+        document.getElementById("cmbGroup1");
+
+        cmb.innerHTML =
+        '<option value="0">All Products</option>';
+
+        groups.forEach(function(group){
+
+            cmb.innerHTML +=
+            `<option value="${group.id}">
+                ${group.name_tam}
+            </option>`;
+
+        });
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+    }
+
+}
 
 /*=============================
     LOAD PRODUCTS
@@ -819,7 +883,7 @@ async function loadProducts() {
                 name: p.name,
 
                 name_tam: p.name_tam || "",
-
+                prod_grp1_id:p.prod_grp1_id,
                 qty: 0,
 
                 searchText: (
@@ -1300,6 +1364,10 @@ document.getElementById("txtSearch")
 
 
 function filterProducts(){
+    const selectedGroup =
+    Number(
+        document.getElementById("cmbGroup1").value
+    );
 
     const search =
     document.getElementById("txtSearch")
@@ -1323,26 +1391,31 @@ function filterProducts(){
         const card =
         document.getElementById("card_" + product.prod_id);
 
-        if(!card) return;
+        if(!card)
+            return;
 
         let visible = true;
 
+        // Show only selected products if current view is selected
         if(currentView == "selected"){
 
-            // Ignore search completely
             visible = product.qty > 0;
 
-        }else{
+        }
 
-            if(search != ""){
+        // Filter by Product Group
+        if(visible && selectedGroup != 0){
 
-                visible = product.searchText.includes(search);
+            visible =
+            Number(product.prod_grp1_id) === selectedGroup;
 
-            }else{
+        }
 
-                visible = true;
+        // Filter by Search Text
+        if(visible && search != ""){
 
-            }
+            visible =
+            product.searchText.includes(search);
 
         }
 
@@ -1599,7 +1672,18 @@ function addSelectedRow(product){
     refreshSelectedSummary();
 
 }
+function groupChanged(){
 
+    const txtSearch =
+    document.getElementById("txtSearch");
+
+    txtSearch.value = "";
+
+    filterProducts();
+
+    //txtSearch.focus();
+
+}
 function searchInputChanged(txt){
 
     // Two consecutive spaces
