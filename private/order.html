@@ -224,42 +224,17 @@ body{
 ========================== */
 
 .searchPanel{
-
     display:flex;
-
-    align-items:center;
-
+    flex-direction:column;
     gap:10px;
-
-}
-#cmbGroup1{
-
-    width:220px;
-
-    height:42px;
-
-    padding:6px;
-
-    border:1px solid #bdbdbd;
-
-    border-radius:8px;
-
 }
 
 #txtSearch{
-
     width:100%;
+}
 
-    padding:12px;
-
-    font-size:17px;
-
-    border:1px solid #bdbdbd;
-
-    border-radius:8px;
-
-    outline:none;
-
+#cmbGroup1{
+    width:100%;
 }
 
 #txtSearch:focus{
@@ -589,7 +564,12 @@ body{
 
     <div class="searchPanel">
 
-        <label for="cmbGroup1"><b>Group</b></label>
+        <input
+            type="text"
+            id="txtSearch"
+            placeholder="Search Product (English / தமிழ்)"
+            oninput="searchInputChanged(this)"
+            onkeydown="searchKeyDown(event)">
 
         <select
             id="cmbGroup1"
@@ -600,15 +580,6 @@ body{
             </option>
 
         </select>
-
-        <br><br>
-
-        <input
-            type="text"
-            id="txtSearch"
-            placeholder="Search Product (English / தமிழ்)"
-            oninput="searchInputChanged(this)"
-            onkeydown="searchKeyDown(event)">
 
     </div>
 
