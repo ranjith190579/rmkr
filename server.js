@@ -2076,3 +2076,35 @@ function checkCashbookLock(req,res){
     return true;
 
 }
+
+app.get("/customerFavouriteProducts/:cust_id", async (req, res) => {
+
+    try{
+
+        const rows =
+            await db.collection("tbl_cust_favourate_prod_mas")
+            .find(
+                {
+                    cust_id: Number(req.params.cust_id)
+                },
+                {
+                    projection:
+                    {
+                        _id:0,
+                        prod_id:1
+                    }
+                }
+            ).toArray();
+
+        res.json(rows);
+
+    }
+    catch(err){
+
+        console.log(err);
+
+        res.json([]);
+
+    }
+
+});
