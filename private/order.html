@@ -575,9 +575,8 @@ body{
             id="cmbGroup1"
             onchange="groupChanged()">
 
-            <option value="0">
-                All Products
-            </option>
+            <option value="ALL">All Products</option>
+            <option value="MY">My Products</option>
 
         </select>
 
@@ -672,7 +671,10 @@ PLACE ORDER
 <script>
 
 const products = [];
+const GROUP_ALL = "ALL";
+const GROUP_MY = "MY";
 
+let favouriteProducts = new Set();
 let customer = null;
 let pendingOrderId = null;
 let currentView = "all";
@@ -681,15 +683,46 @@ let currentView = "all";
     PAGE LOAD
 =============================*/
 
-window.onload = function () {
+window.onload = async function () {
 
     loadCustomer();
+    await loadFavouriteProducts();
     loadProductGroups();
 
     loadProducts();
 
 };
 
+async function loadFavouriteProducts(){
+
+    if(customer == null)
+        return;
+
+    try{
+
+        const response =
+            await fetch("/customerFavouriteProducts/" + customer.id);
+
+        const data = await response.json();
+        
+
+        favouriteProducts.clear();
+
+        data.forEach(function(item){
+
+            favouriteProducts.add(item.prod_id);
+
+        });
+       
+
+    }
+    catch(ex){
+
+        console.log(ex);
+
+    }
+
+}
 
 function toggleView(){
 
@@ -811,7 +844,10 @@ async function loadProductGroups(){
         document.getElementById("cmbGroup1");
 
         cmb.innerHTML =
-        '<option value="0">All Products</option>';
+        `
+        <option value="ALL">All Products</option>
+        <option value="MY">My Products</option>
+        `;
 
         groups.forEach(function(group){
 
@@ -1336,9 +1372,7 @@ document.getElementById("txtSearch")
 
 function filterProducts(){
     const selectedGroup =
-    Number(
-        document.getElementById("cmbGroup1").value
-    );
+    document.getElementById("cmbGroup1").value;
 
     const search =
     document.getElementById("txtSearch")
@@ -1374,11 +1408,30 @@ function filterProducts(){
 
         }
 
-        // Filter by Product Group
-        if(visible && selectedGroup != 0){
+        // Filter
+        if(visible){
 
-            visible =
-            Number(product.prod_grp1_id) === selectedGroup;
+            // All Products
+            if(selectedGroup == GROUP_ALL){
+
+                visible = true;
+
+            }
+
+            // My Products
+            else if(selectedGroup == GROUP_MY){
+                
+                visible = favouriteProducts.has(product.prod_id);
+
+            }
+
+            // Product Group
+            else{
+
+                visible =
+                    Number(product.prod_grp1_id) == Number(selectedGroup);
+
+            }
 
         }
 
